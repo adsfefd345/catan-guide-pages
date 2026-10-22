@@ -11,7 +11,7 @@
   let index=Math.max(0,slides.findIndex(s=>s.id===initialId)),start=null,moved=false;
   function show(value){index=Math.max(0,Math.min(slides.length-1,value));const slide=slides[index];content.replaceChildren();
    const title=el('h3','slide-title',slide.title||String(index+1));content.append(title);
-   for(const block of slide.blocks||[]){if(block.type==='text'||block.type==='heading'){content.append(el(block.type==='heading'?'h4':'p','',block.text));}else if(block.type==='image'&&/^data:image\/png;base64,/.test(block.src)){const img=el('img');img.src=block.src;img.alt=block.alt||slide.title||'';content.append(img)}}
+   for(const block of slide.blocks||[]){if(block.type==='text'||block.type==='heading'){content.append(el(block.type==='heading'?'h4':'p','',block.text));}else if(block.type==='image'&&(/^(?:data:image\/(?:png|jpeg|webp);base64,|assets\/[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp|svg)$)/.test(block.src))){const img=el('img');img.src=block.src;img.alt=block.alt||slide.title||'';content.append(img)}}
    if(!(slide.blocks||[]).length)content.append(el('p','article-empty','아직 작성된 내용이 없어요.'));
    prev.disabled=index===0;next.disabled=index===slides.length-1;restart.hidden=slides.length<2||index!==slides.length-1;
    counter.textContent=(index+1)+' / '+slides.length;stage.setAttribute('aria-label',(index+1)+' / '+slides.length+' · '+(slide.title||'슬라이드'));

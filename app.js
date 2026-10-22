@@ -93,7 +93,7 @@
         body.append(heading); addTocEntry(block.text, heading);
       } else if (block.type === 'text') {
         const p = document.createElement('p'); p.textContent = block.text; body.append(p);
-      } else if (block.type === 'image' && /^data:image\/png;base64,/.test(block.src)) {
+      } else if (block.type === 'image' && (/^(?:data:image\/(?:png|jpeg|webp);base64,|assets\/[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp|svg)$)/.test(block.src))) {
         const img = document.createElement('img'); img.src = block.src; img.alt = block.alt || article.title; img.loading = block.layout ? 'eager' : 'lazy'; if(block.layout){img.className='figma-layout-image';img.draggable=false;} body.append(img);
       }
     }
