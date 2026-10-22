@@ -257,6 +257,31 @@ const sequences={
  'figma-298:27159':['298-27159-hq','306-35417-hq','306-39332-hq']
 };
 
+// Local copy corrections keep the authored motion and replace only its prose.
+const ruleCopyCorrections={
+  "315-61224-hq": {
+    "y": 109,
+    "height": 57,
+    "size": 14,
+    "line": 19,
+    "text": "초보자: 자원 획득 → 거래 → 건설 순서로 합니다.\n기본 규칙: 자원 획득 후 거래·건설을 섞어 합니다.\n거래·건설은 생략 가능하며 거래 횟수는 자유입니다."
+  },
+  "315-74474-hq": {
+    "y": 116,
+    "height": 69,
+    "size": 14,
+    "line": 17,
+    "text": "초보자는 거래를 마친 뒤 건설을 시작합니다.\n발전카드 구매도 건설 단계에 포함됩니다.\n기본 규칙은 거래와 건설을 섞어 진행합니다.\n비용과 말이 충분하면 여러 번 건설할 수 있습니다."
+  },
+  "315-83474-hq": {
+    "y": 116,
+    "height": 80,
+    "size": 14,
+    "line": 16,
+    "text": "발전카드 구매는 건설 단계에 포함됩니다.\n비용을 내고 더미 맨 위에서 뽑아 비공개로 둡니다.\n산 차례에는 쓸 수 없습니다(승점카드 제외).\n승점카드 외에는 한 차례에 1장만 사용합니다.\n사용은 주사위를 굴리기 전에도 가능합니다."
+  }
+};
+
 function mountBoardRotation(host){
  const tokens=[{"id":"202:143","name":"초보자 숫자 칩 · 8 · 3행 5","x":134.5502166748047,"y":268.1770324707031,"w":18,"h":18},{"id":"202:163","name":"초보자 숫자 칩 · 5 · 4행 4","x":186,"y":268.1770324707031,"w":18,"h":18},{"id":"202:178","name":"초보자 숫자 칩 · 11 · 5행 3","x":237.44976806640625,"y":268.1770324707031,"w":18,"h":18},{"id":"202:123","name":"초보자 숫자 칩 · 10 · 2행 4","x":108.82532501220703,"y":312.7338562011719,"w":18,"h":18},{"id":"202:138","name":"초보자 숫자 칩 · 3 · 3행 4","x":160.27511596679688,"y":312.7338562011719,"w":18,"h":18},{"id":"202:158","name":"초보자 숫자 칩 · 4 · 4행 3","x":211.72488403320312,"y":312.7338562011719,"w":18,"h":18},{"id":"202:173","name":"초보자 숫자 칩 · 6 · 5행 2","x":263.1746826171875,"y":312.7338562011719,"w":18,"h":18},{"id":"202:103","name":"초보자 숫자 칩 · 9 · 1행 3","x":83.10043334960938,"y":357.2906799316406,"w":18,"h":18},{"id":"202:118","name":"초보자 숫자 칩 · 4 · 2행 3","x":134.5502166748047,"y":357.2906799316406,"w":18,"h":18},{"id":"202:153","name":"초보자 숫자 칩 · 3 · 4행 2","x":237.44976806640625,"y":357.2906799316406,"w":18,"h":18},{"id":"202:168","name":"초보자 숫자 칩 · 5 · 5행 1","x":288.8995666503906,"y":357.2906799316406,"w":18,"h":18},{"id":"202:98","name":"초보자 숫자 칩 · 2 · 1행 2","x":108.82532501220703,"y":401.8475036621094,"w":18,"h":18},{"id":"202:113","name":"초보자 숫자 칩 · 6 · 2행 2","x":160.27511596679688,"y":401.8475036621094,"w":18,"h":18},{"id":"202:133","name":"초보자 숫자 칩 · 11 · 3행 2","x":211.72488403320312,"y":401.8475036621094,"w":18,"h":18},{"id":"202:148","name":"초보자 숫자 칩 · 8 · 4행 1","x":263.1746826171875,"y":401.8475036621094,"w":18,"h":18},{"id":"202:93","name":"초보자 숫자 칩 · 10 · 1행 1","x":134.5502166748047,"y":446.4043273925781,"w":18,"h":18},{"id":"202:108","name":"초보자 숫자 칩 · 12 · 2행 1","x":186,"y":446.4043273925781,"w":18,"h":18},{"id":"202:128","name":"초보자 숫자 칩 · 9 · 3행 1","x":237.44976806640625,"y":446.4043273925781,"w":18,"h":18},{"id":"206:3","name":"도둑 · 초보자 사막에 배치","x":175,"y":346.2906799316406,"w":40,"h":40}];
  const view=document.createElement('div');view.className='board-rotation';view.hidden=true;
@@ -319,6 +344,8 @@ window.CatanBoard={supports:page=>!!sequences[page.id],mount(container,page){
  const media=document.createElement('div');media.className='board-motion-media';media.append(video);region.append(media,status);container.replaceChildren(region);
  const rotation=page.id==='figma-137:2627'?mountBoardRotation(media):null;
  const progress=window.CatanMotionProgress.mount(media);
+ const ruleCopy=document.createElement("div");ruleCopy.className="board-rule-copy";ruleCopy.hidden=true;media.append(ruleCopy);
+ function updateRuleCopy(){const copy=ruleCopyCorrections[sources[index]];ruleCopy.hidden=!copy;if(!copy)return;ruleCopy.textContent=copy.text;for(const [name,value] of Object.entries({top:copy.y-2,height:copy.height+4,fontSize:copy.size,lineHeight:copy.line}))ruleCopy.style[name]=(value/390*100)+"cqw";}
  let rotationReady=false;
  rotation?.ready.then(()=>{rotationReady=true;updateRotation();}).catch(()=>{});
  let index=0,started=false,ready=false,disposed=false,pendingPlay=false,completed=false,pendingComplete=false;
@@ -329,7 +356,7 @@ window.CatanBoard={supports:page=>!!sequences[page.id],mount(container,page){
  function play(){if(disposed)return;started=true;if(!ready){pendingPlay=true;announce();return;}
  if(reduced.matches){finish();return;}
  video.play().then(announce).catch(()=>{if(disposed||completed)return;started=false;status.textContent='오른쪽을 눌러 다시 재생하세요';});announce();}
- function show(next,autoPlay=false,showCompleted=false){rotation?.reset();if(rotation)rotation.view.hidden=true;index=next;ready=false;started=autoPlay||showCompleted;completed=showCompleted;pendingComplete=showCompleted;pendingPlay=autoPlay;video.pause();video.style.visibility='hidden';video.src='assets/board-'+sources[index]+(sources[index]==='197-2441'?'-slider':'')+'.mp4';video.load();announce();}
+ function show(next,autoPlay=false,showCompleted=false){rotation?.reset();if(rotation)rotation.view.hidden=true;index=next;ready=false;started=autoPlay||showCompleted;completed=showCompleted;pendingComplete=showCompleted;pendingPlay=autoPlay;updateRuleCopy();video.pause();video.style.visibility='hidden';video.src='assets/board-'+sources[index]+(sources[index]==='197-2441'?'-slider':'')+'.mp4';video.load();announce();}
  video.addEventListener('loadeddata',()=>{if(disposed)return;ready=true;if(pendingComplete){finish();}else{video.style.visibility='';if(pendingPlay){pendingPlay=false;play();}else announce();}});
  video.addEventListener('seeked',()=>{if(!disposed&&ready&&completed){video.style.visibility='';updateRotation();}});
  // Skip trailing holds after each scene's final Figma keyframe.

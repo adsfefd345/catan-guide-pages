@@ -301,11 +301,33 @@
     else window.CatanAuth.login();
   });
   renderAccount(window.CatanAuth.getState());
+  function readBeginnerMode(){
+    const mode=new URLSearchParams(window.location.search).get('mode');
+    if(mode)return mode==='beginner';
+    try{return localStorage.getItem('catan-guide-beginner')==='true';}catch{return false;}
+  }
+  function renderGuideMode(){
+    const beginner=readBeginnerMode();
+        const toggle=document.createElement('label');toggle.className='guide-mode-toggle';
+        const basic=document.createElement('span');basic.textContent='기본';
+        const beginnerLabel=document.createElement('span');beginnerLabel.textContent='초보자용';
+        const input=document.createElement('input');input.type='checkbox';input.checked=beginner;input.setAttribute('role','switch');input.setAttribute('aria-label','초보자용');
+        const track=document.createElement('span');track.className='guide-mode-track';track.setAttribute('aria-hidden','true');
+        toggle.append(basic,input,track,beginnerLabel);
+        $('toc-guide-mode').replaceChildren(toggle);
+        $('toc-guide-mode').hidden=false;
+        input.addEventListener('change',()=>{
+          try{localStorage.setItem('catan-guide-beginner',String(input.checked));}catch{}
+          const url=new URL(window.location.href);url.searchParams.set('mode',input.checked?'beginner':'basic');
+          window.history.pushState({},'',url);renderCurrentArticle();
+          $('toc-guide-mode').querySelector('.guide-mode-toggle input')?.focus({preventScroll:true});
+        });
+      }
+
   function renderNumberedPage(article) {
     const allSlides=article.slides;
     const params=new URLSearchParams(window.location.search);
-    let beginner=params.get('mode')==='beginner';
-    if(!params.has('mode')){try{beginner=localStorage.getItem('catan-guide-beginner')==='true';}catch{}}
+    const beginner=readBeginnerMode();
     const hasVariants=allSlides.some(s=>s.variant);
     if(hasVariants&&!params.has('mode')){const url=new URL(window.location.href);url.searchParams.set('mode',beginner?'beginner':'basic');window.history.replaceState({},'',url);}
     if(window.CatanVariants)article={...article,slides:window.CatanVariants.select(allSlides,beginner)};
@@ -345,24 +367,8 @@
     const boardPlayer=window.CatanBoard?.supports(page)?window.CatanBoard.mount($('article-body'),page):null;
     document.body.classList.add('paged-guide');
     document.title=article.title+' · '+page.pageNumber+' · CATAN GUIDE';
-      const href=i=>'article.html?id='+encodeURIComponent(article.id)+'&page='+article.slides[i].pageNumber+(hasVariants?'&mode='+(beginner?'beginner':'basic'):'');
+      const href=i=>'article.html?id='+encodeURIComponent(article.id)+'&page='+article.slides[i].pageNumber+'&mode='+(beginner?'beginner':'basic');
     const surface=$('article-scroll');
-      if(hasVariants){
-        const toggle=document.createElement('label');toggle.className='guide-mode-toggle';
-        const basic=document.createElement('span');basic.textContent='기본';
-        const beginnerLabel=document.createElement('span');beginnerLabel.textContent='초보자용';
-        const input=document.createElement('input');input.type='checkbox';input.checked=beginner;input.setAttribute('role','switch');input.setAttribute('aria-label','초보자용 배치');
-        const track=document.createElement('span');track.className='guide-mode-track';track.setAttribute('aria-hidden','true');
-        toggle.append(basic,input,track,beginnerLabel);
-        $('toc-guide-mode').replaceChildren(toggle);
-        $('toc-guide-mode').hidden=false;
-        input.addEventListener('change',()=>{
-          try{localStorage.setItem('catan-guide-beginner',String(input.checked));}catch{}
-          const url=new URL(window.location.href);url.searchParams.set('mode',input.checked?'beginner':'basic');
-          window.history.pushState({},'',url);renderCurrentArticle();
-          $('toc-guide-mode').querySelector('.guide-mode-toggle input')?.focus({preventScroll:true});
-        });
-      }
     const controls=document.createElement('nav');controls.className='page-turn-controls';controls.setAttribute('aria-label','가이드 페이지 이동');
     function link(label,destination){const node=document.createElement('a');node.textContent=label;node.href=href(destination);return node;}
     if(index>0)controls.append(link('← 이전',index-1));else {const blank=document.createElement('span');blank.className='page-turn-space';controls.append(blank);}
@@ -390,8 +396,7 @@
   }
   function renderCurrentArticle() {
     clearTimeout(endNoticeTimer);$('article-end-notice').classList.remove('is-visible');$('article-end-notice').textContent='';
-    $('toc-guide-mode').replaceChildren();
-    $('toc-guide-mode').hidden=true;
+    renderGuideMode();
     if(cleanupPageNavigation){cleanupPageNavigation();cleanupPageNavigation=null;} document.body.classList.remove('paged-guide','figma-layout-page'); $('article-title').classList.remove('sr-only');
     const article = articles.find(item => item.id === activeArticleId);
       if(article?.id==='figma-9:2'&&window.CatanComponents){

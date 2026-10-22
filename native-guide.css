@@ -27,3 +27,7 @@
 
 .motion-progress-host{container-type:inline-size}
 .motion-step-count{position:absolute;top:8.205128cqw;right:6.153846cqw;z-index:2;color:var(--accent);font:400 3.076923cqw/3.589744cqw "Catan Guide",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none}
+
+/* Text remains sharp while the original Figma motion plays underneath. */
+.board-rule-copy{position:absolute;left:5.641026cqw;width:88.717949cqw;box-sizing:border-box;padding:.512821cqw;background:#faf4e7;color:#3e3228;font-family:"Catan Guide",sans-serif;font-weight:400;white-space:pre;letter-spacing:0;pointer-events:none;z-index:1}
+.board-rule-copy[hidden]{display:none}
