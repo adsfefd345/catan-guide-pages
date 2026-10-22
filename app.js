@@ -359,7 +359,15 @@
     $('toc-guide-mode').hidden=true;
     if(cleanupPageNavigation){cleanupPageNavigation();cleanupPageNavigation=null;} document.body.classList.remove('paged-guide','figma-layout-page'); $('article-title').classList.remove('sr-only');
     const article = articles.find(item => item.id === activeArticleId);
-      if (article && !article.slides?.length && window.CatanNative?.supports(article)) {
+      if(article?.id==='figma-9:2'&&window.CatanComponents){
+        renderArticle({...article,blocks:[],slides:[]});document.body.classList.add('figma-layout-page');$('article-title').classList.add('sr-only');
+        const player=window.CatanComponents.mount($('article-body'));const ordered=window.CatanOrder.sort(articles,savedOrder);const index=ordered.findIndex(a=>a.id===article.id);const href=i=>'article.html?id='+encodeURIComponent(ordered[i].id);
+        const controls=document.createElement('nav');controls.className='page-turn-controls';controls.setAttribute('aria-label','가이드 이동');
+        for(const [direction,label]of [[-1,'← 이전'],[1,'다음 →']]){const i=index+direction;if(i>=0&&i<ordered.length){const a=document.createElement('a');a.href=href(i);a.textContent=label;controls.append(a);}}
+        $('article-body').append(controls);let start=null,moved=false;player.stage.addEventListener('pointerdown',e=>{start={x:e.clientX,y:e.clientY};moved=false;});player.stage.addEventListener('pointermove',e=>{if(start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>10)moved=true;});player.stage.addEventListener('pointercancel',()=>{moved=true;});
+        const go=direction=>{const i=index+direction;if(i>=0&&i<ordered.length)location.href=href(i);};player.stage.addEventListener('click',e=>{if(moved||window.getSelection()?.toString())return;const r=player.stage.getBoundingClientRect();go(e.clientX<r.left+r.width/2?-1:1);});player.stage.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();go(e.key==='ArrowLeft'?-1:1);}});cleanupPageNavigation=()=>player.destroy();document.title=article.title+' · CATAN GUIDE';
+      }
+      else if (article && !article.slides?.length && window.CatanNative?.supports(article)) {
         renderArticle({...article,blocks:[],slides:[]});
         document.body.classList.add('figma-layout-page');
         $('article-title').classList.add('sr-only');
