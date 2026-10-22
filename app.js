@@ -12,6 +12,15 @@
   let reorderController = null;
   const slidePositions = new Map();
   let cleanupPageNavigation = null;
+  let endNoticeTimer;
+  function showArticleEnd() {
+    const notice=$('article-end-notice');if(!notice)return;
+    clearTimeout(endNoticeTimer);notice.classList.remove('is-visible');
+    notice.textContent='글의 끝에 도달했어요.';
+    void notice.offsetWidth;notice.classList.add('is-visible');
+    endNoticeTimer=setTimeout(()=>{notice.classList.remove('is-visible');notice.textContent='';},1000);
+  }
+  window.CatanArticleEnd={show:showArticleEnd};
   const normalize = value => String(value || '').normalize('NFKC').toLocaleLowerCase('ko').replace(/\s+/g, ' ').trim();
   function renderCategories() {
     if (isArticlePage) return;
@@ -51,9 +60,32 @@
     });
     $('toc-links').append(button);
   }
+  function renderArticleNeighbors() {
+    const nav = $('article-neighbors');
+    if (!nav) return;
+    nav.replaceChildren();
+    const ordered = window.CatanOrder.sort(articles, savedOrder);
+    const index = ordered.findIndex(article => article.id === activeArticleId);
+    if (index >= 0) for (const [offset, label, direction] of [[-1, '이전 글', 'previous'], [1, '다음 글', 'next']]) {
+      const article = ordered[index + offset];
+      if (!article) continue;
+      const link = document.createElement('a'); link.className = 'article-neighbor article-neighbor-' + direction;
+      link.href = 'article.html?id=' + encodeURIComponent(article.id);
+      link.rel = offset < 0 ? 'prev' : 'next';
+      const caption = document.createElement('span'); caption.className = 'article-neighbor-label';
+      caption.textContent = offset < 0 ? '← ' + label : label + ' →';
+      const title = document.createElement('strong'); title.textContent = article.title;
+      link.append(caption, title); nav.append(link);
+    }
+    nav.hidden = nav.childElementCount === 0;
+  }
   function renderGuideNavigation() {
     if (!isArticlePage) return;
-    const container = $('toc-guides'); container.replaceChildren();
+    renderArticleNeighbors();
+    const container = $('toc-guides');
+    const previousStates = container.dataset.articleId === activeArticleId
+      ? new Map([...container.querySelectorAll('details.toc-guide-group')].map(group => [group.dataset.category, group.open])) : new Map();
+    container.replaceChildren(); container.dataset.articleId = activeArticleId || '';
     const ordered = window.CatanOrder.sort(articles, savedOrder);
     const numbers = window.CatanOrder.numbers(ordered);
     const groups = new Map();
@@ -63,8 +95,10 @@
       groups.get(category).push(article);
     }
     for (const [category, guides] of groups) {
-      const group = document.createElement('section'); group.className = 'toc-guide-group';
-      const label = document.createElement('h4'); label.textContent = category; group.append(label);
+      const group = document.createElement('details'); group.className = 'toc-guide-group';
+      group.dataset.category = category;
+      group.open = previousStates.has(category) ? previousStates.get(category) : guides.some(guide => guide.id === activeArticleId);
+      const label = document.createElement('summary'); label.className = 'toc-category-toggle'; label.textContent = category; group.append(label);
       for (const guide of guides) {
         const link = document.createElement('a');
         link.href = 'article.html?id=' + encodeURIComponent(guide.id);
@@ -334,9 +368,8 @@
     if(index>0)controls.append(link('← 이전',index-1));else {const blank=document.createElement('span');blank.className='page-turn-space';controls.append(blank);}
     const count=document.createElement('span');count.className='page-turn-count';count.textContent=(index+1)+' / '+article.slides.length;controls.append(count);
     if(index<article.slides.length-1)controls.append(link('다음 →',index+1));else controls.append(link('처음으로',0));
-    const hint=document.createElement('p');hint.className='page-turn-hint';hint.textContent='화면 왼쪽은 이전 페이지, 오른쪽은 다음 페이지로 이동해요.';
-    $('article-body').append(hint,controls);
-    if(boardPlayer){hint.textContent='화면 왼쪽은 이전 장면, 오른쪽은 재생 또는 다음 장면으로 이동해요.';controls.querySelectorAll('a').forEach(a=>a.addEventListener('click',e=>{if(e.ctrlKey||e.metaKey)return;const direction=a.textContent.startsWith('←')?-1:1;if(boardPlayer.step(direction))e.preventDefault();}));}
+    $('article-body').append(controls);
+    if(boardPlayer){controls.querySelectorAll('a').forEach(a=>a.addEventListener('click',e=>{if(e.ctrlKey||e.metaKey)return;const direction=a.textContent.startsWith('←')?-1:1;if(boardPlayer.step(direction))e.preventDefault();}));}
     article.slides.forEach((s,i)=>{const a=link(s.pageNumber+'. '+s.title,i);a.className='toc-guide-link';if(i===index)a.setAttribute('aria-current','page');$('toc-links').append(a);});
     let start=null,moved=false;
     const down=e=>{start={x:e.clientX,y:e.clientY};moved=false};
@@ -348,24 +381,23 @@
       const direction=e.clientX<bounds.left+bounds.width/2?-1:1;
       if(boardPlayer?.step(direction))return;
       const next=index+direction;
-      if(next<0||next>=article.slides.length)return;
+      if(next>=article.slides.length){showArticleEnd();return;}
+      if(next<0)return;
       window.location.href=href(next);
     };
     surface.addEventListener('pointerdown',down);surface.addEventListener('pointermove',move);surface.addEventListener('pointercancel',cancel);surface.addEventListener('click',tap);
     cleanupPageNavigation=()=>{boardPlayer?.destroy();prepPlayer?.destroy();surface.removeEventListener('pointerdown',down);surface.removeEventListener('pointermove',move);surface.removeEventListener('pointercancel',cancel);surface.removeEventListener('click',tap);};
   }
   function renderCurrentArticle() {
+    clearTimeout(endNoticeTimer);$('article-end-notice').classList.remove('is-visible');$('article-end-notice').textContent='';
     $('toc-guide-mode').replaceChildren();
     $('toc-guide-mode').hidden=true;
     if(cleanupPageNavigation){cleanupPageNavigation();cleanupPageNavigation=null;} document.body.classList.remove('paged-guide','figma-layout-page'); $('article-title').classList.remove('sr-only');
     const article = articles.find(item => item.id === activeArticleId);
       if(article?.id==='figma-9:2'&&window.CatanComponents){
         renderArticle({...article,blocks:[],slides:[]});document.body.classList.add('figma-layout-page');$('article-title').classList.add('sr-only');
-        const player=window.CatanComponents.mount($('article-body'));const ordered=window.CatanOrder.sort(articles,savedOrder);const index=ordered.findIndex(a=>a.id===article.id);const href=i=>'article.html?id='+encodeURIComponent(ordered[i].id);
-        const controls=document.createElement('nav');controls.className='page-turn-controls';controls.setAttribute('aria-label','가이드 이동');
-        for(const [direction,label]of [[-1,'← 이전'],[1,'다음 →']]){const i=index+direction;if(i>=0&&i<ordered.length){const a=document.createElement('a');a.href=href(i);a.textContent=label;controls.append(a);}}
-        $('article-body').append(controls);let start=null,moved=false;player.stage.addEventListener('pointerdown',e=>{start={x:e.clientX,y:e.clientY};moved=false;});player.stage.addEventListener('pointermove',e=>{if(start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>10)moved=true;});player.stage.addEventListener('pointercancel',()=>{moved=true;});
-        const go=direction=>{const i=index+direction;if(i>=0&&i<ordered.length)location.href=href(i);};player.stage.addEventListener('click',e=>{if(moved||window.getSelection()?.toString())return;const r=player.stage.getBoundingClientRect();go(e.clientX<r.left+r.width/2?-1:1);});player.stage.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();go(e.key==='ArrowLeft'?-1:1);}});cleanupPageNavigation=()=>player.destroy();document.title=article.title+' · CATAN GUIDE';
+        const player=window.CatanComponents.mount($('article-body'),{onComplete:showArticleEnd});
+        cleanupPageNavigation=()=>player.destroy();document.title=article.title+' · CATAN GUIDE';
       }
       else if (article && !article.slides?.length && window.CatanNative?.supports(article)) {
         renderArticle({...article,blocks:[],slides:[]});
@@ -383,6 +415,7 @@
     }
   }
   if (isArticlePage) {
+    $('article-neighbors').addEventListener('click', event => event.stopPropagation());
     setTocOpen(false); renderCurrentArticle();
       window.addEventListener('popstate',()=>{activeArticleId=new URLSearchParams(window.location.search).get('id');renderCurrentArticle();});
     window.addEventListener('storage', event => {

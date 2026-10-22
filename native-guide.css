@@ -22,3 +22,8 @@
 .detail-page.figma-layout-page .toc-toggle{position:fixed;left:max(0px,calc((100vw - 800px)/2));top:calc(var(--site-header-height,180px) + 62px)}
 .detail-page.figma-layout-page .toc-open .toc-toggle{left:calc(max(0px,(100vw - 800px)/2) + var(--toc-width))}
 @media(prefers-reduced-motion:reduce){.native-scene.is-playing [data-node-id],.native-scene.is-playing .trail-reveal{animation:none!important}.native-scene.is-playing .native-outgoing>[data-node-id]{opacity:0}}
+
+.components-guide .page-turn-controls button{font:inherit;color:inherit;background:transparent;border:0;padding:8px;cursor:pointer}.components-guide .page-turn-controls button:disabled{opacity:.35;cursor:default}
+
+.motion-progress-host{container-type:inline-size}
+.motion-step-count{position:absolute;top:8.205128cqw;right:6.153846cqw;z-index:2;color:var(--accent);font:400 3.076923cqw/3.589744cqw "Catan Guide",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none}

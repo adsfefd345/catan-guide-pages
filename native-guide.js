@@ -1,3 +1,9 @@
+// A sharp text overlay aligned with the authored category label.
+if(typeof window==='object')window.CatanMotionProgress={mount(host){
+  host.classList.add('motion-progress-host');
+  const count=document.createElement('span');count.className='motion-step-count';count.setAttribute('role','status');count.setAttribute('aria-live','polite');count.setAttribute('aria-atomic','true');host.append(count);
+  return {set(current,total){const value=current+' / '+total;if(count.textContent!==value){count.textContent=value;count.setAttribute('aria-label','모션 '+total+'개 중 '+current+'번째');}}};
+}};
 (function(root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -26,7 +32,6 @@
     viewport.setAttribute('role','group');
     const scene = el('div','native-scene');
     viewport.append(scene);
-    const hint = el('p','page-turn-hint','화면 왼쪽은 이전 페이지, 오른쪽은 다음 페이지로 이동해요.');
     const controls = el('nav','page-turn-controls');
     controls.setAttribute('aria-label','가이드 페이지 이동');
     const prev = el('a',null,'← 이전'), next = el('a',null,'다음 →');
@@ -34,9 +39,8 @@
     counter.setAttribute('role','status');
     counter.setAttribute('aria-live','polite');
     controls.append(prev,counter,next);
-    const loading=el('p','motion-loading','모션을 준비하고 있어요…');loading.setAttribute('role','status');region.append(loading,viewport,hint,controls);
+    const loading=el('p','motion-loading','모션을 준비하고 있어요…');loading.setAttribute('role','status');region.append(loading,viewport,controls);
     if (standalone) {
-      hint.remove();
       controls.remove();
       viewport.style.cursor = 'default';
     }
@@ -154,7 +158,9 @@
       ...assets.map(src=>{const img=new Image();img.src=src;return img.decode().catch(()=>{});})
     ]);
     function goTo(value) {
-      if(disposed || standalone)return;
+      if(disposed)return;
+      if(standalone){if(value>index)window.CatanArticleEnd?.show();return;}
+      if(value>1){window.CatanArticleEnd?.show();return;}
       show(value,index===0&&value===1);
     }
     prev.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey)return;event.preventDefault();goTo(0);});
@@ -165,11 +171,11 @@
     viewport.addEventListener('click',e=>{
       if(moved||window.getSelection()?.toString())return;
       const bounds=viewport.getBoundingClientRect(),destination=index+(e.clientX<bounds.left+bounds.width/2?-1:1);
-      if(destination>=0&&destination<=1)goTo(destination);
+      if(destination>=0)goTo(destination);
     });
     viewport.addEventListener('keydown',e=>{
       if(e.target!==viewport)return;
-      if(['ArrowRight','Enter',' '].includes(e.key)){e.preventDefault();if(index===0)goTo(1);}
+      if(['ArrowRight','Enter',' '].includes(e.key)){e.preventDefault();goTo(index+1);}
       if(e.key==='ArrowLeft'){e.preventDefault();if(index===1)goTo(0);}
     });
     const pop=()=>show(Number(new URLSearchParams(location.search).get('page'))===2?1:0,false,'none');
@@ -194,6 +200,7 @@ const stages=[{"id":"86:169","duration":3200,"items":[{"id":"86:157","name":"카
 window.CatanPrep={supports:page=>page.id==='figma-86:169',mount(container,article={}){
 const viewport=document.createElement('div');viewport.className='native-viewport prep-viewport';
 const scene=document.createElement('div');scene.className='native-scene prep-scene';viewport.append(scene);const loading=document.createElement('p');loading.className='motion-loading';loading.textContent='모션을 준비하고 있어요…';loading.setAttribute('role','status');container.replaceChildren(loading,viewport);
+const progress=window.CatanMotionProgress.mount(viewport);
 let disposed=false;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 function place(n,id,x,y,w,h,parent=scene){n.dataset.nodeId=id;n.classList.add('native-layer');Object.assign(n.style,{left:x+'px',top:y+'px',width:w+'px',...(h?{height:h+'px'}:{})});parent.append(n);return n;}
@@ -204,6 +211,7 @@ else if(item.src){const img=document.createElement('img');img.src=item.src;img.a
 (item.children||[]).forEach(child=>layer(child,n));}
 async function show(index){
 if(disposed)return;
+progress.set(index+1,stages.length);
 scene.classList.remove('is-playing');scene.replaceChildren();
 stages[index].items.forEach(item=>layer(item));
 text('107:4','개인 말 보관하기',24,140,174,16,true);
@@ -238,7 +246,10 @@ return {destroy(){disposed=true;observer.disconnect();scene.getAnimations({subtr
 (function(){
 const sequences={
  'figma-129:1889':['129-1889','137-3892','158-3','158-71','177-1116','193-3'],
- 'figma-137:2627':['137-2627','197-2441']
+ 'figma-137:2627':['137-2627','197-2441'],
+ 'figma-129:1894':['129-1894-hq','225-6994-hq','232-7798-hq','267-14443-hq'],
+ 'figma-255:11606':['255-11606-hq','267-16541-hq','267-18893-hq','289-20058-hq'],
+ 'figma-298:27159':['298-27159-hq','306-35417-hq','306-39332-hq']
 };
 
 function mountBoardRotation(host){
@@ -302,12 +313,13 @@ window.CatanBoard={supports:page=>!!sequences[page.id],mount(container,page){
  const status=document.createElement('p');status.className='board-motion-status';status.setAttribute('aria-live','polite');
  const media=document.createElement('div');media.className='board-motion-media';media.append(video);region.append(media,status);container.replaceChildren(region);
  const rotation=page.id==='figma-137:2627'?mountBoardRotation(media):null;
+ const progress=window.CatanMotionProgress.mount(media);
  let rotationReady=false;
  rotation?.ready.then(()=>{rotationReady=true;updateRotation();}).catch(()=>{});
  let index=0,started=false,ready=false,disposed=false,pendingPlay=false,completed=false,pendingComplete=false;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  function updateRotation(){if(!rotation)return;const visible=rotationReady&&sources[index]==='197-2441'&&ready&&completed&&!video.seeking&&video.currentTime>=video.duration-0.05;if(visible)rotation.capture(video);rotation.view.hidden=!visible;}
- function announce(){updateRotation();status.textContent=(index+1)+' / '+sources.length+' · '+(!ready?'장면을 준비하고 있어요':!started?'오른쪽을 눌러 재생하세요':completed||video.ended?'오른쪽을 누르면 다음 장면으로 이동해요':'재생 중 · 한 번 더 누르면 즉시 완료');region.dataset.stage=String(index+1);region.dataset.started=String(started);}
+ function announce(){progress.set(index+1,sources.length);updateRotation();status.textContent=(index+1)+' / '+sources.length+' · '+(!ready?'장면을 준비하고 있어요':!started?'오른쪽을 눌러 재생하세요':completed||video.ended?'오른쪽을 누르면 다음 장면으로 이동해요':'재생 중 · 한 번 더 누르면 즉시 완료');region.dataset.stage=String(index+1);region.dataset.started=String(started);}
  function finish(){completed=true;pendingPlay=false;video.pause();if(ready&&Number.isFinite(video.duration)){pendingComplete=false;video.currentTime=video.duration;}else pendingComplete=true;announce();}
  function play(){if(disposed)return;started=true;if(!ready){pendingPlay=true;announce();return;}
  if(reduced.matches){finish();return;}

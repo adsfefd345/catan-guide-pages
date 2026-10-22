@@ -9,7 +9,7 @@
   for(const b of [prev,next,restart])b.type='button';counter.setAttribute('role','status');counter.setAttribute('aria-live','polite');counter.setAttribute('aria-atomic','true');
   controls.append(prev,counter,next);region.append(stage,controls,restart);container.append(region);
   let index=Math.max(0,slides.findIndex(s=>s.id===initialId)),start=null,moved=false;
-  function show(value){index=Math.max(0,Math.min(slides.length-1,value));const slide=slides[index];content.replaceChildren();
+  function show(value){if(value>=slides.length){window.CatanArticleEnd?.show();return;}index=Math.max(0,Math.min(slides.length-1,value));const slide=slides[index];content.replaceChildren();
    const title=el('h3','slide-title',slide.title||String(index+1));content.append(title);
    for(const block of slide.blocks||[]){if(block.type==='text'||block.type==='heading'){content.append(el(block.type==='heading'?'h4':'p','',block.text));}else if(block.type==='image'&&(/^(?:data:image\/(?:png|jpeg|webp);base64,|assets\/[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp|svg)$)/.test(block.src))){const img=el('img');img.src=block.src;img.alt=block.alt||slide.title||'';content.append(img)}}
    if(!(slide.blocks||[]).length)content.append(el('p','article-empty','아직 작성된 내용이 없어요.'));
