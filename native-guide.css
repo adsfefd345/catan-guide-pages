@@ -1,0 +1,24 @@
+@font-face{font-family:"Catan Guide";src:url("assets/guide-noto-sans-kr.ttf") format("truetype");font-weight:100 900;font-display:block}
+.native-guide{width:100%;cursor:default}
+.native-viewport{position:relative;width:100%;max-width:520px;margin:0 auto;overflow:hidden;touch-action:pan-y;cursor:pointer;background:#faf4e7}
+.native-viewport:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.native-scene{position:relative;width:390px;height:680px;transform-origin:0 0;overflow:hidden;background:#faf4e7;color:#3e3228;font-family:"Catan Guide","Noto Sans KR",sans-serif}
+.native-layer{position:absolute;box-sizing:border-box;transform-origin:50% 50%}
+#article-body .native-scene p,#article-body .native-scene h3{margin:0;padding:0;font:400 16px/19px "Catan Guide",sans-serif;white-space:pre;letter-spacing:0;overflow-wrap:normal}
+#article-body .native-scene .title{font-size:28px;line-height:34px;font-weight:700}
+#article-body .native-scene .guide-category{font-size:12px;line-height:14px;color:#c64c2d}
+#article-body .native-scene .native-prose{white-space:pre-wrap}
+#article-body .native-scene .bold{font-weight:700}
+#article-body .native-scene .muted{color:#808080}
+#article-body .native-scene img{display:block;margin:0;border-radius:0;max-width:none;object-fit:cover;user-select:none;-webkit-user-drag:none}
+.native-justified{display:block;text-align:justify;white-space:normal}
+.expansion-color-dot{display:inline-block;width:6px;height:6px;margin-right:6px;border-radius:50%;vertical-align:2px}
+.native-facts{position:absolute;inset:0}
+.native-trail{position:absolute;inset:0;overflow:visible;pointer-events:none}
+.trail-reveal{stroke-dasharray:1 1;opacity:.7}
+.native-outgoing{pointer-events:none}
+.native-outgoing>[data-node-id]{opacity:0}
+.native-scene.is-playing .native-outgoing>[data-node-id]{opacity:1}
+.detail-page.figma-layout-page .toc-toggle{position:fixed;left:max(0px,calc((100vw - 800px)/2));top:calc(var(--site-header-height,180px) + 62px)}
+.detail-page.figma-layout-page .toc-open .toc-toggle{left:calc(max(0px,(100vw - 800px)/2) + var(--toc-width))}
+@media(prefers-reduced-motion:reduce){.native-scene.is-playing [data-node-id],.native-scene.is-playing .trail-reveal{animation:none!important}.native-scene.is-playing .native-outgoing>[data-node-id]{opacity:0}}

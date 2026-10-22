@@ -1,0 +1,109 @@
+﻿<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b8492f">
+  <meta name="description" content="처음 만나는 카탄, 차근차근 알아가는 보드게임 튜토리얼">
+  <title>CATAN GUIDE · 카탄 가이드</title>
+  <link rel="icon" type="image/png" href="assets/catan-logo-transparent.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="articles.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script src="figma-content.js" defer></script>
+  <script src="article-order.js" defer></script>
+  <script src="article-slides.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#articles">글 목록으로 바로가기</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-row">
+        <a class="brand" href="index.html" aria-label="카탄 가이드 홈"><span class="logo-frame"><img class="brand-logo" src="assets/catan-logo-transparent.png" alt="CATAN 카탄" width="1694" height="929"></span><span class="guide-word">가이드</span></a>
+        <button class="icon-button" id="settings-open" aria-label="설정 열기" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 3-.6 2.1-2 .9-2.1-.5-2 3.5 1.5 1.6v2.8L2.3 15l2 3.5 2.1-.5 2 .9L9 21h4l.6-2.1 2-.9 2.1.5 2-3.5-1.5-1.6v-2.8L19.7 9l-2-3.5-2.1.5-2-.9L13 3Z" transform="translate(1 0)"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <form class="search" role="search" id="search-form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <label class="sr-only" for="search-input">글 검색</label>
+        <input id="search-input" type="search" placeholder="궁금한 카탄 규칙을 검색해 보세요" autocomplete="off">
+        <button type="button" id="search-clear" aria-label="검색어 지우기" hidden>×</button>
+      </form>
+    </div>
+  </header>
+  <main>
+    <section class="library" id="articles" aria-labelledby="list-title">
+      <div class="section-heading"><h2 id="list-title">가이드 모아보기</h2><p id="result-summary" role="status" aria-live="polite"></p></div>
+      <nav class="categories" id="categories" aria-label="글 카테고리"></nav>
+      
+      <div class="edit-actions" id="edit-actions" hidden>
+        <p class="reorder-hint" id="reorder-status" role="status" aria-live="polite">글을 길게 눌러 순서를 바꿀 수 있어요.</p>
+        <a id="write-guide" class="write-guide-button" href="https://www.figma.com/design/3QO58nnocvNbRpLmlCVTH6" target="_blank" rel="noopener noreferrer" aria-label="글쓰기 — 피그마에서 열기, 새 탭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15Z"/></svg><span>글쓰기</span></a>
+      </div>
+      <div id="article-list" class="article-list"></div>
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 10h19l9 9v21H10Z"/><path d="M29 10v10h9M17 27h14m-14 6h9"/><path d="m7 6 2-3m31 3 3 2"/></svg></div>
+        <h3 id="empty-title">아직 등록된 글이 없어요</h3>
+        <p id="empty-description">새로운 카탄 이야기가 이곳에 차곡차곡 쌓일 예정이에요.</p>
+        <button class="reset-button" id="reset-filters" hidden>전체 글 보기 <span aria-hidden="true">↗</span></button>
+      </div>
+      <div class="end-mark" aria-hidden="true"><span></span>⬡<span></span></div>
+    </section>
+    <footer><span class="footer-brand">CATAN GUIDE</span><p>한 걸음씩, 카탄과 친해지는 시간.</p><small>개인 제작 비공식 튜토리얼 사이트</small></footer>
+  </main>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <div class="dialog-heading"><h2 id="settings-title">설정</h2><button class="icon-button" id="settings-close" aria-label="설정 닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <section class="account-setting" aria-labelledby="account-title">
+      <div class="account-heading"><h3 id="account-title">계정</h3><span class="demo-badge">체험 모드</span></div>
+      <div class="account-row"><p id="login-status" role="status" aria-live="polite">로그아웃 상태</p><button type="button" class="login-button" id="login-toggle" aria-describedby="login-description">로그인</button></div>
+      <label class="edit-mode-row" id="edit-mode-row" for="edit-mode" hidden>
+        <span>수정 모드</span>
+        <span class="switch-control"><input type="checkbox" id="edit-mode" role="switch"><span class="switch-track" aria-hidden="true"></span></span>
+      </label>
+      <p id="login-description">지금은 로그인 상태만 체험할 수 있어요.<br>실제 계정과는 연결되지 않아요.</p>
+    </section>
+    <div class="text-size-setting">
+      <div class="text-size-heading"><label for="text-size">글자 크기</label><output id="text-size-value" for="text-size">100%</output></div>
+      <p id="text-size-hint">슬라이더를 움직여 글자 크기를 조절하세요</p>
+      <div class="text-size-range">
+        <div class="range-stops" aria-hidden="true"><span style="--stop:0%"></span><span style="--stop:25%"></span><span style="--stop:50%"></span><span style="--stop:75%"></span><span style="--stop:100%"></span></div>
+        <input id="text-size" type="range" min="90" max="130" step="10" value="100" aria-describedby="text-size-hint">
+      </div>
+      <div class="text-size-labels" aria-hidden="true"><span>작게</span><span>크게</span></div>
+      <div class="text-size-preview"><span class="preview-label">미리보기</span><p id="text-size-sample">카탄, 나만의 속도로 알아가세요.</p></div>
+    </div>
+    <div class="settings-save-area">
+      <div id="settings-notice" class="settings-notice" role="status" aria-live="polite" aria-atomic="true"></div>
+    <button class="primary-button" id="settings-done">설정 완료</button>
+    </div>
+  </dialog>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

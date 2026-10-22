@@ -1,0 +1,103 @@
+﻿<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b8492f">
+  <meta name="description" content="처음 만나는 카탄, 차근차근 알아가는 보드게임 튜토리얼">
+  <title>가이드 상세보기 · CATAN GUIDE</title>
+  <link rel="icon" type="image/png" href="assets/catan-logo-transparent.png">
+  <link rel="stylesheet" href="styles.css?v=remove-topbar-20261021">
+  <link rel="stylesheet" href="native-guide.css?v=toc-offset-20261021">
+  <link rel="stylesheet" href="native-guide-motion.css">
+  <script src="articles.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script src="figma-content.js" defer></script>
+  <script src="article-order.js" defer></script>
+  <script src="article-slides.js" defer></script>
+  <script src="guide-variants.js" defer></script>
+  <script src="native-guide-assets.js" defer></script>
+  <script src="native-guide.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body class="detail-page" data-page="article">
+  <a class="skip-link" href="#article-title">본문으로 바로가기</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-row">
+        <a class="brand" href="index.html" aria-label="카탄 가이드 홈"><span class="logo-frame"><img class="brand-logo" src="assets/catan-logo-transparent.png" alt="CATAN 카탄" width="1694" height="929"></span><span class="guide-word">가이드</span></a>
+        <button class="icon-button" id="settings-open" aria-label="설정 열기" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 3-.6 2.1-2 .9-2.1-.5-2 3.5 1.5 1.6v2.8L2.3 15l2 3.5 2.1-.5 2 .9L9 21h4l.6-2.1 2-.9 2.1.5 2-3.5-1.5-1.6v-2.8L19.7 9l-2-3.5-2.1.5-2-.9L13 3Z" transform="translate(1 0)"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <form class="search" role="search" id="search-form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <label class="sr-only" for="search-input">글 검색</label>
+        <input id="search-input" type="search" placeholder="궁금한 카탄 규칙을 검색해 보세요" autocomplete="off">
+        <button type="button" id="search-clear" aria-label="검색어 지우기" hidden>×</button>
+      </form>
+    </div>
+  </header>
+  <main id="article-dialog" aria-labelledby="article-title">
+    <span id="article-category" hidden></span>
+    <div class="article-scroll" id="article-scroll"><h2 id="article-title" tabindex="-1"></h2><div id="article-body"></div></div>
+    <div id="toc-backdrop" class="toc-backdrop" hidden></div>
+    <nav id="article-toc" class="article-toc" aria-label="가이드 목록과 이 글의 목차" hidden><div id="toc-guide-mode" class="toc-guide-mode" hidden></div><h3>가이드 목록</h3><div id="toc-guides"></div><div class="toc-current"><h3>이 글의 목차</h3><div id="toc-links"></div></div></nav>
+
+    <button type="button" id="toc-toggle" class="toc-toggle" aria-label="목차 열기" aria-controls="article-toc" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+  </main>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <div class="dialog-heading"><h2 id="settings-title">설정</h2><button class="icon-button" id="settings-close" aria-label="설정 닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <section class="account-setting" aria-labelledby="account-title">
+      <div class="account-heading"><h3 id="account-title">계정</h3><span class="demo-badge">체험 모드</span></div>
+      <div class="account-row"><p id="login-status" role="status" aria-live="polite">로그아웃 상태</p><button type="button" class="login-button" id="login-toggle" aria-describedby="login-description">로그인</button></div>
+      <label class="edit-mode-row" id="edit-mode-row" for="edit-mode" hidden>
+        <span>수정 모드</span>
+        <span class="switch-control"><input type="checkbox" id="edit-mode" role="switch"><span class="switch-track" aria-hidden="true"></span></span>
+      </label>
+      <p id="login-description">지금은 로그인 상태만 체험할 수 있어요.<br>실제 계정과는 연결되지 않아요.</p>
+    </section>
+    <div class="text-size-setting">
+      <div class="text-size-heading"><label for="text-size">글자 크기</label><output id="text-size-value" for="text-size">100%</output></div>
+      <p id="text-size-hint">슬라이더를 움직여 글자 크기를 조절하세요</p>
+      <div class="text-size-range">
+        <div class="range-stops" aria-hidden="true"><span style="--stop:0%"></span><span style="--stop:25%"></span><span style="--stop:50%"></span><span style="--stop:75%"></span><span style="--stop:100%"></span></div>
+        <input id="text-size" type="range" min="90" max="130" step="10" value="100" aria-describedby="text-size-hint">
+      </div>
+      <div class="text-size-labels" aria-hidden="true"><span>작게</span><span>크게</span></div>
+      <div class="text-size-preview"><span class="preview-label">미리보기</span><p id="text-size-sample">카탄, 나만의 속도로 알아가세요.</p></div>
+    </div>
+    <div class="settings-save-area">
+      <div id="settings-notice" class="settings-notice" role="status" aria-live="polite" aria-atomic="true"></div>
+    <button class="primary-button" id="settings-done">설정 완료</button>
+    </div>
+  </dialog>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
