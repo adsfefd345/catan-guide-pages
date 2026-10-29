@@ -62,7 +62,21 @@
   }
   let pageSeek=null,seekDragging=false,swipeHintTimer,swipeHintFrame,swipeHintFadeTimer;
   const swipeHintVisitedArticles=new Set();
-  function hideSwipeHint(){clearTimeout(swipeHintTimer);clearTimeout(swipeHintFadeTimer);const hint=$('article-swipe-hint');if(hint){hint.hidden=true;hint.classList.remove('is-fading');}}
+  let swipeHintPointer=null,swipeHintLastTap=null;
+  function hideSwipeHint(){clearTimeout(swipeHintTimer);clearTimeout(swipeHintFadeTimer);swipeHintPointer=swipeHintLastTap=null;const hint=$('article-swipe-hint');if(hint){hint.hidden=true;hint.classList.remove('is-fading');}}
+  function startSwipeHintTap(event){
+    const hint=$('article-swipe-hint');
+    if(!hint||hint.hidden||!event.isPrimary||event.button!==0)return;
+    swipeHintPointer={id:event.pointerId,x:event.clientX,y:event.clientY,time:performance.now()};
+  }
+  function endSwipeHintTap(event){
+    const start=swipeHintPointer;swipeHintPointer=null;
+    if(!start||start.id!==event.pointerId)return;
+    const now=performance.now();
+    if(now-start.time>500||Math.hypot(event.clientX-start.x,event.clientY-start.y)>25){swipeHintLastTap=null;return;}
+    if(swipeHintLastTap&&now-swipeHintLastTap.time<=450&&Math.hypot(event.clientX-swipeHintLastTap.x,event.clientY-swipeHintLastTap.y)<=40){swipeHintLastTap=null;fadeSwipeHint();}
+    else swipeHintLastTap={time:now,x:event.clientX,y:event.clientY};
+  }
   function fadeSwipeHint(){
     clearTimeout(swipeHintTimer);const hint=$('article-swipe-hint');if(!hint||hint.hidden||hint.classList.contains('is-fading'))return;
     hint.classList.add('is-fading');
@@ -484,11 +498,11 @@
     }
   }
   if (isArticlePage) {
-    document.addEventListener('catan-page-swipe',fadeSwipeHint);
-    document.addEventListener('pointerdown',fadeSwipeHint,{capture:true,passive:true});
+    document.addEventListener('pointerdown',startSwipeHintTap,{capture:true,passive:true});
+    document.addEventListener('pointerup',endSwipeHintTap,{capture:true,passive:true});
+    document.addEventListener('pointercancel',()=>{swipeHintPointer=swipeHintLastTap=null;},{capture:true,passive:true});
     document.querySelectorAll('dialog').forEach(dialog=>dialog.addEventListener('close',()=>requestAnimationFrame(maybeShowSwipeHint)));
     const slider=$('article-page-slider');
-    slider.addEventListener('pointerdown',fadeSwipeHint);
     slider.addEventListener('input',()=>{seekDragging=true;const percent=pageSeek.total>1?(Number(slider.value)-1)/(pageSeek.total-1)*100:0;$('article-progress').value=percent;$('article-progress-track').style.setProperty('--progress-position',percent+'%');});
     slider.addEventListener('change',()=>{seekDragging=false;pageSeek?.goTo(Number(slider.value)-1);});
     slider.addEventListener('pointercancel',()=>{seekDragging=false;slider.value=String(pageSeek.getCurrent()+1);});
