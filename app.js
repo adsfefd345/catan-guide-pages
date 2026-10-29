@@ -7,6 +7,52 @@
   let selected = '전체';
   const $ = id => document.getElementById(id);
   const search = $('search-input');
+  let alignPageViewport=()=>{};
+  // Let the banner scroll with the page before enabling directional hiding.
+  const scrollingHeader=document.querySelector('.site-header');
+  if(scrollingHeader){
+    let lastY=Math.max(0,window.scrollY),travel=0,direction=0,scheduled=false;
+    const reveal=()=>document.body.classList.remove('header-hidden');
+    const syncThreshold=()=>{
+      const height=scrollingHeader.offsetHeight;
+      document.body.style.setProperty('--scroll-header-height',height+'px');
+      const before=window.scrollY<height&&!document.body.classList.contains('header-hidden');
+      document.body.classList.toggle('header-before-threshold',before);
+      if(before)reveal();
+      return before;
+    };
+    const update=()=>{
+      scheduled=false;
+      const maxY=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+      const y=Math.max(0,Math.min(window.scrollY,maxY)),delta=y-lastY;lastY=y;
+      const wasBefore=document.body.classList.contains('header-before-threshold');
+      if(delta){
+        const nextDirection=Math.sign(delta);
+        travel=nextDirection===direction?travel+Math.abs(delta):Math.abs(delta);
+        direction=nextDirection;
+      }
+      if(y===0||(direction<0&&travel>=scrollingHeader.offsetHeight))reveal();
+      if(syncThreshold()){travel=0;direction=0;return;}
+      if(wasBefore&&delta>=0){document.body.classList.add('header-hidden');travel=0;return;}
+      if(!delta)return;
+      if(travel<(direction<0?scrollingHeader.offsetHeight:12))return;
+      document.body.classList.toggle('header-hidden',direction>0);
+      travel=0;
+    };
+    window.addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(update);}},{passive:true});
+    scrollingHeader.addEventListener('focusin',reveal);
+    const reset=()=>{lastY=Math.max(0,window.scrollY);travel=0;direction=0;syncThreshold();};
+    window.addEventListener('resize',reset);
+    window.addEventListener('pageshow',reset);
+    alignPageViewport=()=>{
+      document.body.classList.remove('header-before-threshold');
+      document.body.classList.add('header-hidden');
+      window.scrollTo({top:scrollingHeader.offsetHeight,left:window.scrollX,behavior:'instant'});
+      lastY=Math.max(0,window.scrollY);travel=0;direction=0;
+    };
+    new ResizeObserver(syncThreshold).observe(scrollingHeader);
+    syncThreshold();
+  }
   let savedOrder = [];
   try { savedOrder = window.CatanOrder.read(localStorage); } catch {}
   let reorderController = null;
@@ -43,6 +89,7 @@
     $('toc-toggle').setAttribute('aria-expanded', String(open));
     $('toc-toggle').setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
     $('article-dialog').classList.toggle('toc-open', open);
+    document.documentElement.classList.toggle('toc-scroll-locked',open);
   }
   $('toc-toggle')?.addEventListener('click', () => setTocOpen($('article-toc').hidden));
   $('toc-backdrop')?.addEventListener('click', () => { setTocOpen(false); $('toc-toggle').focus(); });
@@ -66,7 +113,9 @@
   function hideSwipeHint(){clearTimeout(swipeHintTimer);clearTimeout(swipeHintFadeTimer);swipeHintPointer=swipeHintLastTap=null;const hint=$('article-swipe-hint');if(hint){hint.hidden=true;hint.classList.remove('is-fading');}}
   function startSwipeHintTap(event){
     const hint=$('article-swipe-hint');
-    if(!hint||hint.hidden||!event.isPrimary||event.button!==0)return;
+    if(!hint||hint.hidden||hint.classList.contains('is-fading')||!event.isPrimary||event.button!==0)return;
+    // Give the second tap its full window even near the automatic timeout.
+    clearTimeout(swipeHintTimer);swipeHintTimer=setTimeout(fadeSwipeHint,1600);
     swipeHintPointer={id:event.pointerId,x:event.clientX,y:event.clientY,time:performance.now()};
   }
   function endSwipeHintTap(event){
@@ -101,9 +150,15 @@
     slider.max=String(total);slider.value=String(getCurrent()+1);slider.disabled=total<2;
     queueSwipeHint();
   }
+  let previousProgressPage=null,pageViewportFrame;
   function setArticleProgress(current,total,completion=1,playing=false){
     const progress=$('article-progress');if(!progress)return;
     total=Math.max(1,total);current=Math.max(1,Math.min(total,current));
+    if(previousProgressPage&&previousProgressPage.total===total&&previousProgressPage.current!==current){
+      cancelAnimationFrame(pageViewportFrame);
+      pageViewportFrame=requestAnimationFrame(alignPageViewport);
+    }
+    previousProgressPage={current,total};
     const percent=total>1?Math.max(0,Math.min(1,(current-2+Math.max(0,Math.min(1,completion)))/(total-1)))*100:0;
     if(!seekDragging)progress.value=percent;
     if(!seekDragging)$('article-progress-track').style.setProperty('--progress-position',percent+'%');
@@ -175,6 +230,7 @@
     }
   }
   function renderArticle(article, {includeTitle = true} = {}) {
+    previousProgressPage=null;cancelAnimationFrame(pageViewportFrame);
     renderGuideNavigation();
     configurePageSeek(1,()=>0,()=>{});
     setArticleProgress(1,1);

@@ -348,7 +348,7 @@ body.detail-page .native-viewport,body.detail-page.paged-guide #article-body,bod
 .article-swipe-hint{top:50%;bottom:auto;transform:translate(-50%,-50%);flex-direction:column;gap:16px;width:max-content;max-width:calc(100% - 40px);padding:28px 32px;border-radius:22px;font-size:clamp(20px,5vw,28px);font-weight:600;text-align:center;white-space:normal;word-break:keep-all;box-shadow:0 8px 32px #3e322833}
 .article-swipe-hint svg{width:64px;height:64px}
 
-.article-swipe-hint{opacity:1;transition:opacity .4s ease}
+.article-swipe-hint{background:rgb(198 76 45 / 82%);opacity:1;transition:opacity .4s ease}
 .article-swipe-hint.is-fading{opacity:0}
 @media(prefers-reduced-motion:reduce){.article-swipe-hint{transition:none}}
 
@@ -357,5 +357,17 @@ body.detail-page .native-viewport,body.detail-page.paged-guide #article-body,bod
 @keyframes reading-status-blink{0%,100%{opacity:1}50%{opacity:.2}}
 @media(prefers-reduced-motion:reduce){#article-reading-status[data-state=playing]::after{animation:none}}
 
+/* Keep the header available when scrolling back or focusing its controls. */
+.site-header{transition:top .22s ease}
+.header-hidden .site-header{top:calc(-1 * var(--scroll-header-height));pointer-events:none}
+.header-before-threshold .site-header{top:calc(-1 * var(--scroll-header-height));transition:none;pointer-events:auto}
+.detail-page.header-hidden .article-toc{top:0}
+.detail-page.header-hidden .toc-backdrop{top:0}
+@media(prefers-reduced-motion:reduce){.site-header{transition:none}}
+
 #article-reading-status{display:inline-flex;align-items:center}
 #article-reading-status[data-state=playing]::after{flex-shrink:0}
+html.toc-scroll-locked{overflow:hidden;overscroll-behavior:none}
+html.toc-scroll-locked body{overflow:hidden}
+.detail-page .article-toc{overscroll-behavior:contain;touch-action:pan-y}
+.toc-scroll-locked .toc-backdrop{touch-action:none}
