@@ -1,0 +1,60 @@
+
+/* Current Figma game introduction, imported 2026-10-29. */
+.import-viewport{position:relative;width:100%;max-width:520px;margin:0 auto;overflow:hidden;background:var(--paper);touch-action:pan-y pinch-zoom}
+.import-frame{position:relative;width:390px;height:680px;transform-origin:0 0;overflow:hidden}
+#article-body .import-frame{font:400 16px/19px 'Catan Guide',sans-serif;color:var(--ink);white-space:normal}
+#article-body .import-frame p{margin:0;white-space:inherit}
+#article-body .import-frame img{display:block;margin:0;border-radius:0;max-width:none}
+.import-frame>div{width:390px!important;height:680px!important}
+.import-video{display:block;width:100%;height:auto;aspect-ratio:390/680;pointer-events:none}
+
+.intro-pieces-scene{position:relative;background:#faf4e7}
+.intro-pieces-panel{position:absolute;left:20px;top:310px;width:350px;height:335px;box-sizing:border-box;border:1px solid #c64c2d;border-radius:20px;background:#fff3d9}
+#article-body .import-viewport .import-pieces{position:absolute;left:25px;top:365px;width:340px;height:100px;margin:0;pointer-events:none}
+.intro-piece-color{position:absolute;inset:0;opacity:0;animation:intro-piece-colors 3.25s linear infinite;animation-delay:calc(var(--color-index) * .8125s - 3.25s)}
+@keyframes intro-piece-colors{0%,22%{opacity:1}25%,97%{opacity:0}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.intro-piece-color{animation:none}.intro-piece-color:first-child{opacity:1}}
+
+.import-viewport{container-type:inline-size}
+.prep-player-count{position:absolute;left:63.076923%;top:3.529412%;display:flex;gap:1.538462cqw;background:#faf4e7}
+.prep-player-count button{display:flex;align-items:center;justify-content:center;width:14.871795cqw;height:7.692308cqw;padding:0;border:1px solid #c64c2d;border-radius:1.538462cqw;background:#faf4e7;color:#c64c2d;font:400 3.076923cqw/1.5 'Catan Guide',sans-serif;cursor:pointer}
+.prep-player-count button[aria-pressed=true]{background:#c64c2d;color:#faf4e7}
+.prep-board-canvas{position:absolute;left:6.153846%;top:32.058824%;width:87.692308%;height:43.614706%;pointer-events:none}
+.prep-board-control{position:absolute;left:10%;top:76.470588%;width:80%;height:4.705882%;background:#faf4e7;display:flex;align-items:center;--rotation-progress:50%}
+.prep-board-control input{appearance:none;width:100%;height:6px;border:0;border-radius:5px;margin:0;background:linear-gradient(to right,#c64c2d var(--rotation-progress),#efd0c0 var(--rotation-progress));cursor:pointer;touch-action:none}
+.prep-board-control input::-webkit-slider-thumb{appearance:none;width:20px;height:20px;border:0;border-radius:50%;background:#c64c2d}
+.prep-board-control input::-moz-range-thumb{width:20px;height:20px;border:0;border-radius:50%;background:#c64c2d}
+.prep-board-fullscreen{position:absolute;left:83.846154%;top:31.911765%;width:12.564103%;height:7.352941%;padding:0;background:#faf4e7;border:1px solid #c64c2d;border-radius:5px;color:#c64c2d;font:400 2.564103cqw/1.2 'Catan Guide',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+.prep-board-fullscreen span{font-size:6.153846cqw;line-height:1}
+.prep-board-dialog{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:64px 16px 88px;overflow:hidden;background:transparent;border:0;border-radius:0;box-shadow:none;color:#fff}
+.prep-board-dialog[open]{display:grid;place-items:center}
+.prep-board-dialog::backdrop{background:rgb(0 0 0 / 78%);backdrop-filter:none}
+.prep-board-dialog canvas{display:block;width:min(94vw,calc((100dvh - 160px) * 1.1528),1000px);height:auto;max-width:100%;object-fit:contain}
+.prep-board-dialog input{position:absolute;left:50%;bottom:max(32px,env(safe-area-inset-bottom));transform:translateX(-50%);appearance:none;display:block;width:min(80vw,600px);height:32px;margin:0;background:transparent;cursor:pointer;touch-action:none}
+.prep-board-dialog input::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:rgb(255 255 255 / 55%)}
+.prep-board-dialog input::-webkit-slider-thumb{appearance:none;width:24px;height:24px;margin-top:-9.5px;border:0;border-radius:50%;background:#e16a46}
+.prep-board-dialog input::-moz-range-track{height:5px;border-radius:3px;background:rgb(255 255 255 / 55%)}
+.prep-board-dialog input::-moz-range-thumb{width:24px;height:24px;border:0;border-radius:50%;background:#e16a46}
+.prep-board-close{position:absolute;right:max(16px,env(safe-area-inset-right));top:max(16px,env(safe-area-inset-top));display:grid;place-items:center;width:44px;height:44px;margin:0;padding:8px;border:0;border-radius:0;color:#fff;background:transparent;cursor:pointer}
+.prep-board-close svg{width:28px;height:28px}
+.prep-board-close:focus-visible,.prep-board-dialog input:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.animation-replay{position:absolute;right:6.153846%;top:9.117647%;z-index:2;display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:10px;border:1px solid #c64c2d;border-radius:50%;background:#faf4e7;color:#c64c2d;cursor:pointer}
+.animation-replay[hidden]{display:none}
+.animation-replay svg{display:block;width:22px;height:22px}
+.animation-replay:hover{background:#f4e7c8}
+.animation-replay:focus-visible{outline:2px solid #c64c2d;outline-offset:3px}
+.prep-board-elements{position:absolute;left:0;top:30.882353%;width:100%;height:45.588235%;background:#faf4e7;overflow:hidden;pointer-events:none}
+.prep-board-elements[hidden]{display:none}
+.figma-map-scale{position:relative;width:390px;height:310px;transform-origin:0 0}
+.figma-map-drawing{transform-origin:195px 156.29px}
+.figma-map-scale img{display:block;margin:0;border-radius:0;max-width:none}
+#article-body .figma-map-scale img{display:block;margin:0;border-radius:0;max-width:none}
+#article-body .figma-map-scale{font:400 16px/19px 'Catan Guide',sans-serif}
+#article-body .figma-map-scale p{margin:0;white-space:normal}
+.prep-board-enlarged{position:relative;width:min(94vw,calc((100dvh - 160px) * 1.258),1100px);aspect-ratio:390/310;pointer-events:none}
+.prep-board-dialog .figma-map-scale{font-family:'Catan Guide',sans-serif;color:#43372a}
+.prep-board-dialog .figma-map-scale p{margin:0}
+.figma-elements-scene a{text-decoration:none}
+.progress-start-choice{position:absolute;left:6.153846%;top:55%;width:42.307692%;height:11.176471%;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer}
+.progress-player-link{position:absolute;left:63.076923%;top:3.529412%;width:14.871795%;height:4.411765%;border-radius:6px}
+.progress-start-choice:focus-visible,.progress-player-link:focus-visible{outline:3px solid #3e3228;outline-offset:3px}

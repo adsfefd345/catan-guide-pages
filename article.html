@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
@@ -6,22 +6,26 @@
   <meta name="theme-color" content="#b8492f">
   <meta name="description" content="처음 만나는 카탄, 차근차근 알아가는 보드게임 튜토리얼">
   <title>가이드 상세보기 · CATAN GUIDE</title>
-  <link rel="icon" type="image/png" href="assets/catan-logo-transparent.png">
-  <link rel="stylesheet" href="styles.css?v=7f1f7a6e03f1">
-  <link rel="stylesheet" href="native-guide.css?v=e55e2b5189be">
+  <link rel="icon" type="image/svg+xml" sizes="any" href="assets/catan-favicon-square.svg">
+  <link rel="stylesheet" href="styles.css?v=79adcc71d026">
+  <link rel="stylesheet" href="native-guide.css?v=ae3d075069e0">
   <link rel="stylesheet" href="native-guide-motion.css?v=ecc1db7d30f1">
-  <link rel="stylesheet" href="onboarding.css?v=15633b2ca4bb">
-  <script src="onboarding.js?v=0d7f95f1009e" defer></script>
-  <script src="articles.js?v=c3dcfa49a4af" defer></script>
+  <link rel="stylesheet" href="onboarding.css?v=ab157c20ef2e">
+  <script src="onboarding.js?v=4fd6ff2a785f" defer></script>
+  <script src="articles.js?v=c09821706a48" defer></script>
   <script src="auth.js?v=aa657f082e19" defer></script>
-  <script src="figma-content.js?v=03ed56ddab3d" defer></script>
+  <script src="figma-content.js?v=73b10408c04c" defer></script>
   <script src="article-order.js?v=ac1bcaf3eb34" defer></script>
-  <script src="article-slides.js?v=460cb5fc321c" defer></script>
+  <script src="swipe-navigation.js?v=c49760ce1831" defer></script>
+  <script src="article-slides.js?v=6aa05348d43d" defer></script>
   <script src="guide-variants.js?v=e6a58a5d12fc" defer></script>
   <script src="native-guide-assets.js?v=bae2b59216ec" defer></script>
-  <script src="native-guide.js?v=de351254ce7e" defer></script>
-  <script src="components-guide.js?v=b39da44c143d" defer></script>
-  <script src="app.js?v=86f077779317" defer></script>
+  <script src="native-guide.js?v=19ccb64e3509" defer></script>
+  <script src="components-guide.js?v=476b38747a2f" defer></script>
+  <link rel="stylesheet" href="game-intro.css?v=28ff8fcede71">
+  <script src="game-intro-scenes.js?v=987615f05091" defer></script>
+  <script src="game-intro.js?v=d7f173ec0f7e" defer></script>
+  <script src="app.js?v=4c43ccc98628" defer></script>
 </head>
 <body class="detail-page" data-page="article">
   <a class="skip-link" href="#article-title">본문으로 바로가기</a>
@@ -43,12 +47,21 @@
   </header>
   <main id="article-dialog" aria-labelledby="article-title">
     <span id="article-category" hidden></span>
-    <div class="article-scroll" id="article-scroll"><h2 id="article-title" tabindex="-1"></h2><div id="article-body"></div><nav id="article-neighbors" class="article-neighbors" aria-label="이전 글과 다음 글" hidden></nav></div>
+    <div class="article-scroll" id="article-scroll"><h2 id="article-title" tabindex="-1"></h2><div id="article-body"></div></div>
     <div id="toc-backdrop" class="toc-backdrop" hidden></div>
     <nav id="article-toc" class="article-toc" aria-label="가이드 목록과 이 글의 목차" hidden><div id="toc-guide-mode" class="toc-guide-mode" hidden></div><h3>가이드 목록</h3><div id="toc-guides"></div><div class="toc-current"><h3>이 글의 목차</h3><div id="toc-links"></div></div></nav>
 
-    <button type="button" id="toc-toggle" class="toc-toggle" aria-label="목차 열기" aria-controls="article-toc" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
   </main>
+  <aside class="article-bottom-banner" id="article-bottom-banner" aria-label="글 진행 및 이동">
+    <div class="article-bottom-status">
+      <div class="article-bottom-progress">
+    <div class="article-progress-heading"><span id="article-reading-status" role="status" aria-live="polite"></span><span id="article-progress-label"></span></div>
+    <div class="article-progress-track" id="article-progress-track"><progress id="article-progress" max="100" value="0" aria-label="글 진행률"></progress><span class="article-progress-dot" aria-hidden="true"></span><input id="article-page-slider" type="range" min="1" max="1" value="1" step="1" aria-label="페이지 이동" disabled></div>
+      </div>
+    </div>
+    <nav id="article-neighbors" class="article-neighbors" aria-label="이전 글, 목차, 다음 글"><button type="button" id="toc-toggle" class="toc-toggle" aria-label="목차 열기" aria-controls="article-toc" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12M3 6h1M3 12h1M3 18h1"/></svg><span>목차</span></button></nav>
+  </aside>
+  <div id="article-swipe-hint" class="article-swipe-hint" role="status" hidden><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h19M8 3 4 7l4 4M23 3l4 4-4 4M12 24l-3-5a2 2 0 0 1 3-2l2 2V12a2 2 0 0 1 4 0v5l4-1a3 3 0 0 1 4 3l-1 6a4 4 0 0 1-4 3h-4a5 5 0 0 1-5-4Z"/></svg><span>밀어서 넘기세요.</span></div>
   <div id="article-end-notice" class="article-end-notice" role="status" aria-live="polite" aria-atomic="true"></div>
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <div class="dialog-heading"><h2 id="settings-title">설정</h2><button class="icon-button" id="settings-close" aria-label="설정 닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>

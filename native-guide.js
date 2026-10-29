@@ -1,8 +1,7 @@
-// A sharp text overlay aligned with the authored category label.
+// Retain the motion host layout without a category-side counter.
 if(typeof window==='object')window.CatanMotionProgress={mount(host){
   host.classList.add('motion-progress-host');
-  const count=document.createElement('span');count.className='motion-step-count';count.setAttribute('role','status');count.setAttribute('aria-live','polite');count.setAttribute('aria-atomic','true');host.append(count);
-  return {set(current,total){const value=current+' / '+total;if(count.textContent!==value){count.textContent=value;count.setAttribute('aria-label','모션 '+total+'개 중 '+current+'번째');}}};
+  return {set(){}};
 }};
 (function(root, factory) {
   const api = factory();
@@ -41,7 +40,7 @@ if(typeof window==='object')window.CatanMotionProgress={mount(host){
     controls.append(prev,counter,next);
     const loading=el('p','motion-loading','모션을 준비하고 있어요…');loading.setAttribute('role','status');region.append(loading,viewport,controls);
     if (standalone) {
-      controls.remove();
+      prev.style.visibility='hidden';
       viewport.style.cursor = 'default';
     }
     container.replaceChildren(region);
@@ -145,38 +144,41 @@ if(typeof window==='object')window.CatanMotionProgress={mount(host){
       counter.textContent=(index+1)+' / 2';
       if (!standalone) {
       prev.href=href(0);prev.style.visibility=index===0?'hidden':'visible';prev.tabIndex=index===0?-1:0;
-      next.href=href(index===0?1:0);next.textContent=index===0?'다음 →':'처음으로';
+      next.href=href(index===0?1:0);next.textContent='다음 페이지';
       if(historyMode!=='none')history[historyMode==='replace'?'replaceState':'pushState']({nativeGuidePage:index+1},'',href(index));
       }
       if(animate&&index===1&&!reduced.matches)scene.classList.add('is-playing');
       scene.querySelector('.native-outgoing')?.setAttribute('aria-hidden','true');
       onChange(index);
+      const motionGeneration=generation;
+      function trackIntro(){
+        if(disposed||generation!==motionGeneration)return;
+        const animations=scene.getAnimations({subtree:true}),duration=Math.max(0,...animations.map(a=>Number(a.effect.getComputedTiming().endTime)||0));
+        const elapsed=Math.max(0,...animations.map(a=>Number(a.currentTime)||0));
+        window.CatanArticleProgress?.set(standalone?1:index+1,standalone?1:2,duration>0?Math.min(1,elapsed/duration):1,animations.some(a=>a.playState==='running'));
+        if(animations.some(a=>a.playState==='running'))requestAnimationFrame(trackIntro);
+      }
+      trackIntro();
     }
     const ready=Promise.all([
       document.fonts.load('400 16px "Catan Guide"').catch(()=>{}),
       document.fonts.load('700 16px "Catan Guide"').catch(()=>{}),
       ...assets.map(src=>{const img=new Image();img.src=src;return img.decode().catch(()=>{});})
     ]);
-    function goTo(value) {
+    function goTo(value,skipMotion=false) {
       if(disposed)return;
-      if(standalone){if(value>index)window.CatanArticleEnd?.show();return;}
+      if(standalone){if(value>index)window.CatanArticleEnd?.show();else if(value<index)window.CatanArticleEnd?.start();return;}
+      if(value<0){window.CatanArticleEnd?.start();return;}
       if(value>1){window.CatanArticleEnd?.show();return;}
-      show(value,index===0&&value===1);
+      show(value,!skipMotion&&index===0&&value===1);
     }
     prev.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey)return;event.preventDefault();goTo(0);});
-    next.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey)return;event.preventDefault();goTo(index===0?1:0);});
-    viewport.addEventListener('pointerdown',e=>{pointer={x:e.clientX,y:e.clientY};moved=false;});
-    viewport.addEventListener('pointermove',e=>{if(pointer&&Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>10)moved=true;});
-    viewport.addEventListener('pointercancel',()=>{moved=true;pointer=null;});
-    viewport.addEventListener('click',e=>{
-      if(moved||window.getSelection()?.toString())return;
-      const bounds=viewport.getBoundingClientRect(),destination=index+(e.clientX<bounds.left+bounds.width/2?-1:1);
-      if(destination>=0)goTo(destination);
-    });
+    next.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey)return;event.preventDefault();goTo(index+1);});
+    const removeSwipe=window.CatanSwipe.mount(viewport,direction=>goTo(index+direction));
     viewport.addEventListener('keydown',e=>{
       if(e.target!==viewport)return;
       if(['ArrowRight','Enter',' '].includes(e.key)){e.preventDefault();goTo(index+1);}
-      if(e.key==='ArrowLeft'){e.preventDefault();if(index===1)goTo(0);}
+      if(e.key==='ArrowLeft'){e.preventDefault();goTo(index-1);}
     });
     const pop=()=>show(Number(new URLSearchParams(location.search).get('page'))===2?1:0,false,'none');
     if (!standalone) window.addEventListener('popstate',pop);
@@ -189,7 +191,7 @@ if(typeof window==='object')window.CatanMotionProgress={mount(host){
       viewport.style.visibility='';
       region.dataset.ready='true';loading.remove();
     });
-    return {goTo,stage:viewport,getIndex:()=>index,destroy(){disposed=true;observer.disconnect();window.removeEventListener('popstate',pop);scene.getAnimations({subtree:true}).forEach(a=>a.cancel());}};
+    return {goTo,stage:viewport,getIndex:()=>index,destroy(){removeSwipe();disposed=true;observer.disconnect();window.removeEventListener('popstate',pop);scene.getAnimations({subtree:true}).forEach(a=>a.cancel());}};
   }
   return {supports,mount};
 });
@@ -197,11 +199,11 @@ if(typeof window==='object')window.CatanMotionProgress={mount(host){
 
 (function(){
 const stages=[{"id":"86:169","duration":3200,"items":[{"id":"86:157","name":"카드 보관함 · 자원 3칸","src":"assets/prep-img3.png","x":42,"y":458,"w":130,"h":70,"opacity":1},{"id":"86:158","name":"카드 보관함 · 자원 2칸 + 발전 1칸","src":"assets/prep-img3.png","x":221,"y":458,"w":130,"h":70,"opacity":1},{"id":"105:630","name":"orange_city 1","src":"assets/prep-imgOrangeCity1.png","x":49,"y":246,"w":50,"h":50,"opacity":1},{"id":"105:631","name":"orange_road_left 1","src":"assets/prep-imgOrangeRoadLeft1.png","x":111,"y":248,"w":50,"h":50,"opacity":1},{"id":"105:632","name":"orange_settlement 1","src":"assets/prep-imgOrangeSettlement1.png","x":86,"y":207,"w":50,"h":50,"opacity":1},{"id":"105:633","name":"storage-chest-closed 1","src":"assets/prep-imgStorageChestClosed1.png","x":216,"y":212,"w":100,"h":86,"opacity":0},{"id":"86:156","name":"storage-chest-open 1","src":"assets/prep-imgStorageChestOpen1.png","x":216,"y":201,"w":100,"h":95,"opacity":1},{"id":"111:3","name":"보관 연출 · 이미지 편집으로 비운 상자","src":"assets/prep-img.png","x":216,"y":201,"w":100,"h":95,"opacity":0},{"id":"109:22","name":"보관 연출 · orange_settlement 1 → 상자","src":"assets/prep-imgOrangeSettlement2.svg","x":132,"y":235,"w":114,"h":29.017,"opacity":1,"svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_settlement 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 14.0167C46 -9.98332 79 -1.98332 114 29.0167\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"109:43","name":"보관 연출 · orange_city 1 → 상자","src":"assets/prep-imgOrangeCity2.svg","x":99,"y":269,"w":147,"h":23.107,"opacity":1,"svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_city 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 19C51 29 100 20 147 0\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"109:64","name":"보관 연출 · orange_road_left 1 → 상자","src":"assets/prep-imgOrangeRoadLeft2.svg","x":160,"y":272,"w":86,"h":24.476,"opacity":1,"svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_road_left 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 22C31 29 57 21 86 0\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"105:757","name":"resource_lumber 2","src":"assets/prep-imgResourceLumber2.png","x":285,"y":383,"w":38,"h":60,"opacity":1},{"id":"105:758","name":"resource_ore 2","src":"assets/prep-imgResourceOre2.png","x":242,"y":383,"w":38,"h":60,"opacity":1},{"id":"105:759","name":"resource_wool 2","src":"assets/prep-imgResourceWool2.png","x":199,"y":383,"w":38,"h":60,"opacity":1},{"id":"105:756","name":"resource_grain 2","src":"assets/prep-imgResourceGrain2.png","x":155,"y":383,"w":39,"h":60,"opacity":1},{"id":"105:755","name":"resource_brick 2","src":"assets/prep-imgResourceBrick2.png","x":328,"y":384,"w":38,"h":60,"opacity":1},{"id":"105:913","name":"knight_01 2","src":"assets/prep-imgKnight012.png","x":78,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:914","name":"monopoly 5","src":"assets/prep-imgMonopoly5.png","x":101,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:915","name":"road_building 4","src":"assets/prep-imgRoadBuilding4.png","x":126,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:921","name":"year_of_plenty 5","src":"assets/prep-imgYearOfPlenty5.png","x":149,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:917","name":"victory_library 1","src":"assets/prep-imgVictoryLibrary1.png","x":174,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:918","name":"victory_market 1","src":"assets/prep-imgVictoryMarket1.png","x":201,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:919","name":"victory_town_hall 1","src":"assets/prep-imgVictoryTownHall1.png","x":225,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:916","name":"victory_cathedral 1","src":"assets/prep-imgVictoryCathedral1.png","x":249,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:920","name":"victory_university 1","src":"assets/prep-imgVictoryUniversity1.png","x":273,"y":548,"w":39,"h":60,"opacity":1},{"id":"105:912","name":"10_back 1","src":"assets/prep-img10Back1.png","x":325,"y":548,"w":39,"h":60,"opacity":0}]},{"id":"115:3","duration":2400,"items":[{"id":"115:4","name":"카드 보관함 · 자원 3칸","x":42,"y":458,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-img3.png"},{"id":"115:5","name":"카드 보관함 · 자원 2칸 + 발전 1칸","x":221,"y":458,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-img3.png"},{"id":"115:13","name":"orange_city 1","x":49,"y":246,"w":50,"h":50,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeCity1.png"},{"id":"115:14","name":"orange_road_left 1","x":111,"y":248,"w":50,"h":50,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeRoadLeft1.png"},{"id":"115:15","name":"orange_settlement 1","x":86,"y":207,"w":50,"h":50,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeSettlement1.png"},{"id":"115:16","name":"storage-chest-closed 1","x":216,"y":212,"w":100,"h":86,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgStorageChestClosed1.png"},{"id":"115:17","name":"storage-chest-open 1","x":216,"y":201,"w":100,"h":95,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgStorageChestOpen1.png"},{"id":"115:18","name":"보관 연출 · 이미지 편집으로 비운 상자","x":216,"y":201,"w":100,"h":95,"opacity":0,"clip":false,"children":[],"src":"assets/prep-img.png"},{"id":"115:19","name":"보관 연출 · orange_settlement 1 → 상자","x":132,"y":235,"w":114,"h":29.017,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeSettlement2.svg","svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_settlement 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 14.0167C46 -9.98332 79 -1.98332 114 29.0167\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"115:20","name":"보관 연출 · orange_city 1 → 상자","x":99,"y":269,"w":147,"h":23.107,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeCity2.svg","svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_city 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 19C51 29 100 20 147 0\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"115:21","name":"보관 연출 · orange_road_left 1 → 상자","x":160,"y":272,"w":86,"h":24.476,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeRoadLeft2.svg","svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_road_left 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 22C31 29 57 21 86 0\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"115:29","name":"knight_01 2","x":78,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgKnight012.png"},{"id":"115:30","name":"monopoly 5","x":101,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgMonopoly5.png"},{"id":"115:31","name":"road_building 4","x":126,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgRoadBuilding4.png"},{"id":"115:32","name":"year_of_plenty 5","x":149,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgYearOfPlenty5.png"},{"id":"115:33","name":"victory_library 1","x":174,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgVictoryLibrary1.png"},{"id":"115:34","name":"victory_market 1","x":201,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgVictoryMarket1.png"},{"id":"115:35","name":"victory_town_hall 1","x":225,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgVictoryTownHall1.png"},{"id":"115:36","name":"victory_cathedral 1","x":249,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgVictoryCathedral1.png"},{"id":"115:37","name":"victory_university 1","x":273,"y":548,"w":39,"h":60,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgVictoryUniversity1.png"},{"id":"115:38","name":"10_back 1","x":325,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-img10Back1.png"},{"id":"119:3","name":"원본 사진 · resource_grain 2 수납 완료","x":42,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:4","name":"Rectangle","x":0,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle.png"}]},{"id":"119:9","name":"원본 사진 · resource_wool 2 수납 완료","x":85.33,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:10","name":"Rectangle","x":-43.33,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle.png"}]},{"id":"119:15","name":"원본 사진 · resource_ore 2 수납 완료","x":128.67,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:16","name":"Rectangle","x":-86.67,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle.png"}]},{"id":"119:21","name":"원본 사진 · resource_lumber 2 수납 완료","x":221,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:22","name":"Rectangle","x":0,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle1.png"}]},{"id":"119:27","name":"원본 사진 · resource_brick 2 수납 완료","x":264.33,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:28","name":"Rectangle","x":-43.33,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle1.png"}]},{"id":"119:33","name":"원본 사진 · 발전 카드 수납 완료","x":307.67,"y":458,"w":43.333,"h":70,"opacity":0,"clip":true,"children":[{"id":"119:34","name":"Rectangle","x":-86.67,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle1.png"}]},{"id":"115:27","name":"resource_grain 2","x":51,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceGrain2.png"},{"id":"115:26","name":"resource_wool 2","x":94.33,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceWool2.png"},{"id":"115:25","name":"resource_ore 2","x":137.67,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceOre2.png"},{"id":"115:24","name":"resource_lumber 2","x":230,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceLumber2.png"},{"id":"115:28","name":"resource_brick 2","x":273.33,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceBrick2.png"}]},{"id":"115:83","duration":3400,"items":[{"id":"115:84","name":"카드 보관함 · 자원 3칸","x":42,"y":458,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-img3.png"},{"id":"115:85","name":"카드 보관함 · 자원 2칸 + 발전 1칸","x":221,"y":458,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-img3.png"},{"id":"115:93","name":"orange_city 1","x":49,"y":246,"w":50,"h":50,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeCity1.png"},{"id":"115:94","name":"orange_road_left 1","x":111,"y":248,"w":50,"h":50,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeRoadLeft1.png"},{"id":"115:95","name":"orange_settlement 1","x":86,"y":207,"w":50,"h":50,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeSettlement1.png"},{"id":"115:96","name":"storage-chest-closed 1","x":216,"y":212,"w":100,"h":86,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgStorageChestClosed1.png"},{"id":"115:97","name":"storage-chest-open 1","x":216,"y":201,"w":100,"h":95,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgStorageChestOpen1.png"},{"id":"115:98","name":"보관 연출 · 이미지 편집으로 비운 상자","x":216,"y":201,"w":100,"h":95,"opacity":0,"clip":false,"children":[],"src":"assets/prep-img.png"},{"id":"115:99","name":"보관 연출 · orange_settlement 1 → 상자","x":132,"y":235,"w":114,"h":29.017,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeSettlement2.svg","svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_settlement 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 14.0167C46 -9.98332 79 -1.98332 114 29.0167\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"115:100","name":"보관 연출 · orange_city 1 → 상자","x":99,"y":269,"w":147,"h":23.107,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeCity2.svg","svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_city 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 19C51 29 100 20 147 0\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"115:101","name":"보관 연출 · orange_road_left 1 → 상자","x":160,"y":272,"w":86,"h":24.476,"opacity":1,"clip":false,"children":[],"src":"assets/prep-imgOrangeRoadLeft2.svg","svg":"<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path id=\"&#235;&#179;&#180;&#234;&#180;&#128; &#236;&#151;&#176;&#236;&#182;&#156; &#194;&#183; orange_road_left 1 &#226;&#134;&#146; &#236;&#131;&#129;&#236;&#158;&#144;\" opacity=\"0\" d=\"M0 22C31 29 57 21 86 0\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke=\"#C64C2D\"/>\n</svg>\n"},{"id":"115:109","name":"knight_01 2","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgKnight012.png"},{"id":"115:110","name":"monopoly 5","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgMonopoly5.png"},{"id":"115:111","name":"road_building 4","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgRoadBuilding4.png"},{"id":"115:112","name":"year_of_plenty 5","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgYearOfPlenty5.png"},{"id":"115:113","name":"victory_library 1","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgVictoryLibrary1.png"},{"id":"115:114","name":"victory_market 1","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgVictoryMarket1.png"},{"id":"115:115","name":"victory_town_hall 1","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgVictoryTownHall1.png"},{"id":"115:116","name":"victory_cathedral 1","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgVictoryCathedral1.png"},{"id":"115:117","name":"victory_university 1","x":190,"y":548,"w":39,"h":60,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgVictoryUniversity1.png"},{"id":"119:135","name":"원본 사진 · resource_grain 2 수납 완료","x":42,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:136","name":"Rectangle","x":0,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle.png"}]},{"id":"119:137","name":"원본 사진 · resource_wool 2 수납 완료","x":85.33,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:138","name":"Rectangle","x":-43.33,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle.png"}]},{"id":"119:139","name":"원본 사진 · resource_ore 2 수납 완료","x":128.67,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:140","name":"Rectangle","x":-86.67,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle.png"}]},{"id":"119:141","name":"원본 사진 · resource_lumber 2 수납 완료","x":221,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:142","name":"Rectangle","x":0,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle1.png"}]},{"id":"119:143","name":"원본 사진 · resource_brick 2 수납 완료","x":264.33,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:144","name":"Rectangle","x":-43.33,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle1.png"}]},{"id":"119:145","name":"원본 사진 · 발전 카드 수납 완료","x":307.67,"y":458,"w":43.333,"h":70,"opacity":1,"clip":true,"children":[{"id":"119:146","name":"Rectangle","x":-86.67,"y":0,"w":130,"h":70,"opacity":1,"clip":false,"children":[],"src":"assets/prep-step2-imgRectangle1.png"}]},{"id":"115:107","name":"resource_grain 2","x":51,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceGrain2.png"},{"id":"115:106","name":"resource_wool 2","x":94.33,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceWool2.png"},{"id":"115:105","name":"resource_ore 2","x":137.67,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceOre2.png"},{"id":"115:104","name":"resource_lumber 2","x":230,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceLumber2.png"},{"id":"115:108","name":"resource_brick 2","x":273.33,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-imgResourceBrick2.png"},{"id":"115:118","name":"10_back 1","x":316,"y":466,"w":34,"h":52,"opacity":0,"clip":false,"children":[],"src":"assets/prep-img10Back1.png"}]}];
-window.CatanPrep={supports:page=>page.id==='figma-86:169',mount(container,article={}){
+window.CatanPrep={stepCount:page=>page.id==='figma-86:169'?stages.length:0,supports:page=>page.id==='figma-86:169',mount(container,article={},onProgress=()=>{}){
 const viewport=document.createElement('div');viewport.className='native-viewport prep-viewport';
 const scene=document.createElement('div');scene.className='native-scene prep-scene';viewport.append(scene);const loading=document.createElement('p');loading.className='motion-loading';loading.textContent='모션을 준비하고 있어요…';loading.setAttribute('role','status');container.replaceChildren(loading,viewport);
 const progress=window.CatanMotionProgress.mount(viewport);
-let disposed=false;
+let disposed=false,currentStage=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 function place(n,id,x,y,w,h,parent=scene){n.dataset.nodeId=id;n.classList.add('native-layer');Object.assign(n.style,{left:x+'px',top:y+'px',width:w+'px',...(h?{height:h+'px'}:{})});parent.append(n);return n;}
 function text(id,copy,x,y,w,size=16,bold=false,line=25){const n=document.createElement('p');n.textContent=copy;n.className='prep-text';Object.assign(n.style,{fontSize:size+'px',fontWeight:bold?'700':'400',lineHeight:line+'px',whiteSpace:'pre-wrap'});return place(n,id,x,y,w);}
@@ -211,7 +213,8 @@ else if(item.src){const img=document.createElement('img');img.src=item.src;img.a
 (item.children||[]).forEach(child=>layer(child,n));}
 async function show(index){
 if(disposed)return;
-progress.set(index+1,stages.length);
+currentStage=index;
+progress.set(index+1,stages.length);onProgress(index+1,0);
 scene.classList.remove('is-playing');scene.replaceChildren();
 stages[index].items.forEach(item=>layer(item));
 text('107:4','개인 말 보관하기',24,140,174,16,true);
@@ -223,23 +226,28 @@ text('86:170',article.category || '',24,32,342,12,false,14).style.color='#c64c2d
 text('86:171','구성물 정리하기',24,66,342,28,true,34);
 
 // Apply and hold the opening keyframe before image decoding yields a paint.
-const animate=!reduced.matches;
+const animate=!reduced.matches&&new URLSearchParams(location.search).get('skipMotion')!=='1';
 if(animate)scene.classList.add('is-playing');
 const animations=scene.getAnimations({subtree:true});
 animations.forEach(a=>{a.pause();a.currentTime=0;});
 try{await Promise.all(Array.from(scene.querySelectorAll('img'),img=>img.decode()));}catch{if(!disposed){viewport.dataset.error='asset-load';loading.textContent='이미지를 불러오지 못했어요. 새로고침해 주세요.';}return;}
 if(disposed)return;
 viewport.dataset.stage=String(index+1);viewport.dataset.ready='true';loading.remove();
-if(!animate){viewport.dataset.complete='true';return;}
+if(!animate){onProgress(index+1,1);viewport.dataset.complete='true';return;}
 animations.forEach(a=>a.play());
-try{await Promise.all(animations.map(a=>a.finished));}catch{return;}
+let tracking=true;
+function track(){if(disposed||!tracking)return;const durations=animations.map(a=>Number(a.effect.getComputedTiming().endTime)||0);const duration=Math.max(1,...durations);const elapsed=Math.max(0,...animations.map(a=>Number(a.currentTime)||0));onProgress(index+1,Math.min(1,elapsed/duration),animations.some(a=>a.playState==='running'));requestAnimationFrame(track);}
+track();
+try{await Promise.all(animations.map(a=>a.finished));}catch{return;}finally{tracking=false;}
+if(!disposed)onProgress(index+1,1);
 if(disposed)return;
 if(index+1<stages.length)show(index+1);else viewport.dataset.complete='true';
 }
 const size=()=>{const scale=viewport.clientWidth/390;scene.style.transform='scale('+scale+')';viewport.style.height=680*scale+'px';};
 const observer=new ResizeObserver(size);observer.observe(viewport);size();
-show(reduced.matches?stages.length-1:0);
-return {destroy(){disposed=true;observer.disconnect();scene.getAnimations({subtree:true}).forEach(a=>a.cancel());}};
+const requestedStage=Number(new URLSearchParams(location.search).get('motionStep'));
+show(new URLSearchParams(location.search).get('skipMotion')==='1'?Math.max(0,Math.min(stages.length-1,requestedStage>0?requestedStage-1:stages.length-1)):reduced.matches?stages.length-1:0);
+return {getIndex:()=>currentStage,destroy(){disposed=true;observer.disconnect();scene.getAnimations({subtree:true}).forEach(a=>a.cancel());}};
 }};
 })();
 
@@ -336,14 +344,15 @@ function mountBoardRotation(host){
  return {view,ready,capture,destroy(){cancelAnimationFrame(rotationFrame);ground.pause();},reset(){cancelAnimationFrame(rotationFrame);baseFrame=null;capturedSource=null;slider.value='0';rotate(true);}};
 }
 
-window.CatanBoard={supports:page=>!!sequences[page.id],mount(container,page){
+window.CatanBoard={stepCount:page=>sequences[page.id]?.length||0,supports:page=>!!sequences[page.id],mount(container,page,onProgress=()=>{}){
  const sources=sequences[page.id];
  const region=document.createElement('div');region.className='board-motion';region.tabIndex=0;region.setAttribute('aria-label',page.title+' 애니메이션. 왼쪽은 이전 장면, 오른쪽은 재생 또는 다음 장면');
  const video=document.createElement('video');video.className='board-motion-video';video.muted=true;video.playsInline=true;video.preload='auto';video.disablePictureInPicture=true;video.setAttribute('aria-label',page.title);
- const status=document.createElement('p');status.className='board-motion-status';status.setAttribute('aria-live','polite');
+ const status=document.createElement('p');status.className='board-motion-status';status.hidden=true;status.setAttribute('aria-live','polite');
  const media=document.createElement('div');media.className='board-motion-media';media.append(video);region.append(media,status);container.replaceChildren(region);
  const rotation=page.id==='figma-137:2627'?mountBoardRotation(media):null;
  const progress=window.CatanMotionProgress.mount(media);
+ const replay=window.CatanReplay?.mount(media,()=>{rotation?.reset();if(rotation)rotation.view.hidden=true;completed=false;pendingComplete=false;pendingPlay=false;started=true;video.currentTime=0;video.play().then(announce).catch(()=>{started=false;announce();});announce();});
  const ruleCopy=document.createElement("div");ruleCopy.className="board-rule-copy";ruleCopy.hidden=true;media.append(ruleCopy);
  function updateRuleCopy(){const copy=ruleCopyCorrections[sources[index]];ruleCopy.hidden=!copy;if(!copy)return;ruleCopy.textContent=copy.text;for(const [name,value] of Object.entries({top:copy.y-2,height:copy.height+4,fontSize:copy.size,lineHeight:copy.line}))ruleCopy.style[name]=(value/390*100)+"cqw";}
  let rotationReady=false;
@@ -351,19 +360,21 @@ window.CatanBoard={supports:page=>!!sequences[page.id],mount(container,page){
  let index=0,started=false,ready=false,disposed=false,pendingPlay=false,completed=false,pendingComplete=false;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  function updateRotation(){if(!rotation)return;const visible=rotationReady&&sources[index]==='197-2441'&&ready&&completed&&!video.seeking&&video.currentTime>=video.duration-0.05;if(visible)rotation.capture(video);rotation.view.hidden=!visible;}
- function announce(){progress.set(index+1,sources.length);updateRotation();status.textContent=(index+1)+' / '+sources.length+' · '+(!ready?'장면을 준비하고 있어요':!started?'오른쪽을 눌러 재생하세요':completed||video.ended?'오른쪽을 누르면 다음 장면으로 이동해요':'재생 중 · 한 번 더 누르면 즉시 완료');region.dataset.stage=String(index+1);region.dataset.started=String(started);}
+ function reportMotion(){if(disposed)return;replay?.set(ready&&(completed||video.ended)&&!video.seeking);const duration=motionEndTimes[sources[index]]||video.duration;const fraction=completed||video.ended?1:!started||!ready?0:Number.isFinite(duration)&&duration>0?Math.min(1,video.currentTime/duration):0;onProgress(index+1,fraction,ready&&started&&!completed&&!video.ended&&!video.paused);}
+ function announce(){reportMotion();progress.set(index+1,sources.length);updateRotation();status.hidden=true;status.textContent='';region.dataset.stage=String(index+1);region.dataset.started=String(started);}
  function finish(){completed=true;pendingPlay=false;video.pause();if(ready&&Number.isFinite(video.duration)){pendingComplete=false;video.currentTime=video.duration;}else pendingComplete=true;announce();}
  function play(){if(disposed)return;started=true;if(!ready){pendingPlay=true;announce();return;}
  if(reduced.matches){finish();return;}
- video.play().then(announce).catch(()=>{if(disposed||completed)return;started=false;status.textContent='오른쪽을 눌러 다시 재생하세요';});announce();}
+ video.play().then(announce).catch(()=>{if(disposed||completed)return;started=false;reportMotion();});announce();}
  function show(next,autoPlay=false,showCompleted=false){rotation?.reset();if(rotation)rotation.view.hidden=true;index=next;ready=false;started=autoPlay||showCompleted;completed=showCompleted;pendingComplete=showCompleted;pendingPlay=autoPlay;updateRuleCopy();video.pause();video.style.visibility='hidden';video.src='assets/board-'+sources[index]+(sources[index]==='197-2441'?'-slider':'')+'.mp4';video.load();announce();}
+ ['playing','pause','ended'].forEach(type=>video.addEventListener(type,reportMotion));
  video.addEventListener('loadeddata',()=>{if(disposed)return;ready=true;if(pendingComplete){finish();}else{video.style.visibility='';if(pendingPlay){pendingPlay=false;play();}else announce();}});
- video.addEventListener('seeked',()=>{if(!disposed&&ready&&completed){video.style.visibility='';updateRotation();}});
+ video.addEventListener('seeked',()=>{if(!disposed&&ready&&completed){video.style.visibility='';updateRotation();reportMotion();}});
  // Skip trailing holds after each scene's final Figma keyframe.
  const motionEndTimes={'129-1889':3.45,'137-2627':3.45,'137-3892':3.7};
- video.addEventListener('timeupdate',()=>{const end=motionEndTimes[sources[index]];if(end&&started&&!completed&&!video.seeking&&video.currentTime>=end)finish();});
+ video.addEventListener('timeupdate',()=>{reportMotion();const end=motionEndTimes[sources[index]];if(end&&started&&!completed&&!video.seeking&&video.currentTime>=end)finish();});
  video.addEventListener('ended',()=>{completed=true;announce();});
- video.addEventListener('error',()=>{if(!disposed)status.textContent='애니메이션을 불러오지 못했어요. 새로고침해 주세요.';});
+ video.addEventListener('error',()=>{if(!disposed){status.hidden=false;status.textContent='애니메이션을 불러오지 못했어요. 새로고침해 주세요.';}});
  function step(direction){
  if(disposed)return false;
  if(direction<0){if(index===0)return false;show(index-1,false,true);return true;}
@@ -373,7 +384,10 @@ window.CatanBoard={supports:page=>!!sequences[page.id],mount(container,page){
  if(index+1<sources.length){show(index+1,true);return true;}
  return false;
  }
- show(0);
- return {step,destroy(){disposed=true;rotation?.destroy();video.pause();video.removeAttribute('src');video.load();}};
+ if(new URLSearchParams(location.search).get('skipMotion')==='1'){
+ const requested=Number(new URLSearchParams(location.search).get('motionStep'));
+ show(Math.max(0,Math.min(sources.length-1,requested>0?requested-1:sources.length-1)),false,true);
+ }else show(0);
+ return {step,getIndex:()=>index,destroy(){disposed=true;rotation?.destroy();video.pause();video.removeAttribute('src');video.load();}};
 }};
 })();

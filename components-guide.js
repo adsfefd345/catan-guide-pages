@@ -22,18 +22,14 @@ prev.type=next.type='button';prev.textContent='← 이전';next.textContent='다
 let index=0,disposed=false,animation=null;
 function show(value,animate=true){
  index=Math.max(0,Math.min(4,value));animation?.cancel();pages.forEach((page,i)=>page.hidden=i!==index);
- progress.set(index+1,pages.length);viewport.dataset.page=String(index+1);viewport.setAttribute('aria-label','게임 구성물 '+(index+1)+' / 5');counter.textContent=(index+1)+' / 5';prev.disabled=index===0;
+ window.CatanArticleProgress?.set(index+1,pages.length);progress.set(index+1,pages.length);viewport.dataset.page=String(index+1);viewport.setAttribute('aria-label','게임 구성물 '+(index+1)+' / 5');counter.textContent=(index+1)+' / 5';prev.disabled=index===0;
  if(animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches)animation=pages[index].animate([{opacity:0},{opacity:1}],{duration:300,easing:'ease-out'});
 }
-function go(direction){if(disposed)return;if(index===4&&direction>0){onComplete();return;}if(index===0&&direction<0)return;show(index+direction);const url=new URL(location.href);url.searchParams.set('component',index+1);history.replaceState(null,'',url);}
+function go(direction){if(disposed)return;if(index===4&&direction>0){onComplete();return;}if(index===0&&direction<0){window.CatanArticleEnd?.start();return;}show(index+direction);const url=new URL(location.href);url.searchParams.set('component',index+1);history.replaceState(null,'',url);}
 prev.onclick=()=>go(-1);next.onclick=()=>go(1);
-let startPoint=null,moved=false;
-viewport.addEventListener('pointerdown',e=>{startPoint={x:e.clientX,y:e.clientY};moved=false;});
-viewport.addEventListener('pointermove',e=>{if(startPoint&&Math.hypot(e.clientX-startPoint.x,e.clientY-startPoint.y)>10)moved=true;});
-viewport.addEventListener('pointercancel',()=>{moved=true;});
-viewport.addEventListener('click',e=>{if(moved||getSelection()?.toString())return;const r=viewport.getBoundingClientRect();go(e.clientX<r.left+r.width/2?-1:1);});
+const removeSwipe=window.CatanSwipe.mount(viewport,go);
 viewport.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();go(e.key==='ArrowLeft'?-1:1);}});
 const size=()=>{const scale=viewport.clientWidth/390;pages.forEach(page=>page.style.transform='scale('+scale+')');viewport.style.height=680*scale+'px';};const observer=new ResizeObserver(size);observer.observe(viewport);size();
 const requested=Number(new URLSearchParams(location.search).get('component'));show(Number.isFinite(requested)&&requested>0?requested-1:0,false);
-return{stage:viewport,destroy(){disposed=true;animation?.cancel();observer.disconnect();}};
+return{stage:viewport,getIndex:()=>index,goTo(value){show(value,false);const url=new URL(location.href);url.searchParams.set('component',index+1);history.replaceState(null,'',url);},destroy(){removeSwipe();disposed=true;animation?.cancel();observer.disconnect();}};
 }};
