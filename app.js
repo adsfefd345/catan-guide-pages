@@ -97,16 +97,6 @@
     if (!$('article-toc').hidden) { event.preventDefault(); setTocOpen(false); $('toc-toggle').focus(); }
   });
   $('article-dialog')?.addEventListener('close', () => setTocOpen(false));
-  function addTocEntry(label, target) {
-    const button = document.createElement('button');
-    button.type = 'button'; button.textContent = label;
-    button.addEventListener('click', () => {
-      setTocOpen(false);
-      target.scrollIntoView({block:'start',behavior:'instant'});
-      target.focus({preventScroll:true});
-    });
-    $('toc-links').append(button);
-  }
   let pageSeek=null,seekDragging=false,swipeHintTimer,swipeHintFrame,swipeHintFadeTimer;
   const swipeHintVisitedArticles=new Set();
   let swipeHintPointer=null,swipeHintLastTap=null;
@@ -237,15 +227,13 @@
     $('article-title').textContent = article.title;
     $('article-category').textContent = article.category;
     const body = $('article-body'); body.replaceChildren();
-    $('toc-links').replaceChildren();
-    if (includeTitle) addTocEntry(article.tocTitle || article.title, $('article-title'));
     const blocks = Array.isArray(article.blocks) ? article.blocks : (article.body ? [{type:'text',text:article.body}] : []);
     let headingIndex = 0;
     for (const block of blocks) {
       if (block.type === 'heading') {
         const heading = document.createElement('h3'); heading.textContent = block.text;
         heading.id = 'article-section-' + (++headingIndex); heading.tabIndex = -1;
-        body.append(heading); addTocEntry(block.text, heading);
+        body.append(heading);
       } else if (block.type === 'text') {
         const p = document.createElement('p'); p.textContent = block.text; body.append(p);
       } else if (block.type === 'image' && (/^(?:data:image\/(?:png|jpeg|webp);base64,|assets\/[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp|svg)$)/.test(block.src))) {
@@ -255,11 +243,6 @@
     if (Array.isArray(article.slides) && article.slides.length) {
       const player = window.CatanSlides.mount({container:body,slides:article.slides,initialId:slidePositions.get(article.id),onChange:(id,index)=>{slidePositions.set(article.id,id);setArticleProgress(index+1,article.slides.length);}});
       configurePageSeek(article.slides.length,()=>player.getIndex(),i=>player.goTo(i));
-      article.slides.forEach((slide,index) => {
-        const button = document.createElement('button'); button.type = 'button'; button.textContent = (index+1) + '. ' + (slide.title || '슬라이드');
-        button.addEventListener('click', () => { player.goTo(index); setTocOpen(false); player.stage.scrollIntoView({block:'start',behavior:'instant'}); player.stage.focus({preventScroll:true}); });
-        $('toc-links').append(button);
-      });
     }
     if (!blocks.length && !article.slides?.length) {
       const empty = document.createElement('p'); empty.className = 'article-empty'; empty.textContent = '아직 작성된 내용이 없어요.'; body.append(empty);
@@ -467,18 +450,7 @@
           setArticleProgress(i+1,article.slides.length);
           document.title=article.title+' · '+article.slides[i].pageNumber+' · CATAN GUIDE';
 
-          $('toc-links').querySelectorAll('[data-native-page]').forEach(link=>{
-            if(Number(link.dataset.nativePage)===i)link.setAttribute('aria-current','page');
-            else link.removeAttribute('aria-current');
-          });
         }
-      });
-      article.slides.forEach((s,i)=>{
-        const button=document.createElement('button');button.type='button';
-        button.textContent=s.pageNumber+'. '+s.title;button.dataset.nativePage=String(i);
-        if(i===index)button.setAttribute('aria-current','page');
-        button.addEventListener('click',()=>{player.goTo(i);setTocOpen(false);player.stage.focus({preventScroll:true});});
-        $('toc-links').append(button);
       });
       configurePageSeek(article.slides.length,()=>player.getIndex(),i=>player.goTo(i,true));
       cleanupPageNavigation=()=>player.destroy();
@@ -512,7 +484,6 @@
     controls.append(prev,next);$('article-body').append(controls);
     function go(direction){if(boardPlayer?.step(direction))return;const destination=index+direction;if(destination>=article.slides.length){showArticleEnd();return;}if(destination<0){showArticleEnd('start');return;}window.location.href=href(destination);}
     prev.addEventListener('click',()=>go(-1));next.addEventListener('click',()=>go(1));
-    article.slides.forEach((s,i)=>{const a=link(s.pageNumber+'. '+s.title,i);a.className='toc-guide-link';if(i===index)a.setAttribute('aria-current','page');$('toc-links').append(a);});
     const removeSwipe=window.CatanSwipe.mount(surface,go);
     cleanupPageNavigation=()=>{removeSwipe();boardPlayer?.destroy();prepPlayer?.destroy();};
   }
@@ -527,9 +498,8 @@
         renderArticle({...article,blocks:[],slides:[]});document.body.classList.add('figma-layout-page');$('article-title').classList.add('sr-only');
         const requested=Number(new URLSearchParams(location.search).get('introPage'))||1;
         const initialIndex=Math.max(0,Math.min(article.sceneIds.length-1,requested-1));
-        const player=window.CatanIntro.mount({container:$('article-body'),article,initialIndex,autoplayInitial:replayMotion||initialIndex===0,onPlayersChange:players=>{const url=new URL(location.href);url.searchParams.set('players',players);url.searchParams.set('introPage',player.getIndex()+1);url.searchParams.delete('skipMotion');history.pushState({},'',url);renderCurrentArticle({replayMotion:true});},onChange:(i,fraction,playing)=>{setArticleProgress(i+1,article.sceneIds.length,fraction,playing);$('toc-links').querySelectorAll('[data-intro-page]').forEach(b=>{if(Number(b.dataset.introPage)===i)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});}});
+        const player=window.CatanIntro.mount({container:$('article-body'),article,initialIndex,autoplayInitial:replayMotion||initialIndex===0,onPlayersChange:players=>{const url=new URL(location.href);url.searchParams.set('players',players);url.searchParams.set('introPage',player.getIndex()+1);url.searchParams.delete('skipMotion');history.pushState({},'',url);renderCurrentArticle({replayMotion:true});},onChange:(i,fraction,playing)=>{setArticleProgress(i+1,article.sceneIds.length,fraction,playing);}});
         configurePageSeek(article.sceneIds.length,()=>player.getIndex(),i=>player.goTo(i));
-        article.sceneIds.forEach((id,i)=>{const button=document.createElement('button');button.type='button';button.dataset.introPage=i;button.textContent=(i+1)+'. '+(window.CatanIntroScenes.find(s=>s.id===id)?.title||article.title);if(i===initialIndex)button.setAttribute('aria-current','page');button.addEventListener('click',()=>{player.goTo(i);setTocOpen(false);});$('toc-links').append(button);});
         cleanupPageNavigation=()=>player.destroy();document.title=article.title+' - CATAN GUIDE';
       }
       else if(article?.id==='figma-9:2'&&window.CatanComponents){
