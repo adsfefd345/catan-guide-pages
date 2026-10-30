@@ -425,7 +425,9 @@
         input.addEventListener('change',()=>{
           try{localStorage.setItem('catan-guide-beginner',String(input.checked));}catch{}
           const url=new URL(window.location.href);url.searchParams.set('mode',input.checked?'beginner':'basic');
-          window.history.pushState({},'',url);renderCurrentArticle();
+          const hasSceneModes=!!articles.find(article=>article.id===activeArticleId)?.sceneModes;
+          if(hasSceneModes){url.searchParams.set('introPage','1');url.searchParams.delete('skipMotion');}
+          window.history.pushState({},'',url);renderCurrentArticle({replayMotion:hasSceneModes});
           $('toc-guide-mode').querySelector('.guide-mode-toggle input')?.focus({preventScroll:true});
         });
       }
@@ -494,11 +496,16 @@
     if(cleanupPageNavigation){cleanupPageNavigation();cleanupPageNavigation=null;} document.body.classList.remove('paged-guide','figma-layout-page'); $('article-title').classList.remove('sr-only');
     let article = articles.find(item => item.id === activeArticleId);
       if(article?.source==='figma-game-intro-20261029'||article?.source==='figma-local-scenes'){
+        if(article.sceneModes){const guideMode=readBeginnerMode()?'beginner':'basic';article={...article,guideMode,sceneGroups:article.sceneModes[guideMode]};}
         if(article.sceneGroups){const players=new URLSearchParams(location.search).get('players')==='3'?'3':'4';article={...article,players:Number(players),sceneIds:article.sceneGroups[players]};}
+        const startChoice=new URLSearchParams(location.search).get('startPlayer');
+        if(article.title==='게임 진행'&&article.guideMode==='beginner'&&['yes','no'].includes(startChoice)){
+          article={...article,sceneIds:article.sceneIds.filter(id=>{const scene=window.CatanIntroScenes.find(s=>s.id===id),match=scene?.title.match(/ · 4-(\d+)$/);return !match||(startChoice==='yes'?Number(match[1])<=11:Number(match[1])>=12);})};
+        }
         renderArticle({...article,blocks:[],slides:[]});document.body.classList.add('figma-layout-page');$('article-title').classList.add('sr-only');
         const requested=Number(new URLSearchParams(location.search).get('introPage'))||1;
         const initialIndex=Math.max(0,Math.min(article.sceneIds.length-1,requested-1));
-        const player=window.CatanIntro.mount({container:$('article-body'),article,initialIndex,autoplayInitial:replayMotion||initialIndex===0,onPlayersChange:players=>{const url=new URL(location.href);url.searchParams.set('players',players);url.searchParams.set('introPage',player.getIndex()+1);url.searchParams.delete('skipMotion');history.pushState({},'',url);renderCurrentArticle({replayMotion:true});},onChange:(i,fraction,playing)=>{setArticleProgress(i+1,article.sceneIds.length,fraction,playing);}});
+        const player=window.CatanIntro.mount({container:$('article-body'),article,initialIndex,autoplayInitial:replayMotion||initialIndex===0,onStartChoice:choice=>{const url=new URL(location.href);url.searchParams.set('startPlayer',choice);url.searchParams.set('introPage','4');url.searchParams.delete('skipMotion');history.pushState({},'',url);renderCurrentArticle({replayMotion:true});},onPlayersChange:players=>{const url=new URL(location.href);url.searchParams.set('players',players);url.searchParams.set('introPage',player.getIndex()+1);url.searchParams.delete('skipMotion');history.pushState({},'',url);renderCurrentArticle({replayMotion:true});},onChange:(i,fraction,playing)=>{setArticleProgress(i+1,article.sceneIds.length,fraction,playing);}});
         configurePageSeek(article.sceneIds.length,()=>player.getIndex(),i=>player.goTo(i));
         cleanupPageNavigation=()=>player.destroy();document.title=article.title+' - CATAN GUIDE';
       }

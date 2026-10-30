@@ -4,17 +4,20 @@ button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 button.addEventListener('click',event=>{event.stopPropagation();host.closest('[tabindex]')?.focus({preventScroll:true});button.hidden=true;restart();});host.append(button);
 return{set:complete=>{button.hidden=!complete;}};
 }};
-window.CatanIntro={mount({container,article,initialIndex=0,autoplayInitial=initialIndex===0,onChange=()=>{},onPlayersChange=()=>{}}){
-const scenes=article.sceneIds.map(id=>id==='91:303'?{id,html:catanPiecesScene()}:window.CatanIntroScenes.find(s=>s.id===id));
+window.CatanIntro={mount({container,article,initialIndex=0,autoplayInitial=initialIndex===0,onChange=()=>{},onPlayersChange=()=>{},onStartChoice=()=>{}}){
+const scenes=article.sceneIds.map(id=>{const scene=window.CatanIntroScenes.find(s=>s.id===id);return ['553:73875','760:5034'].includes(id)?{...scene,advanceChoice:true}:scene;});
 const viewport=document.createElement('div');viewport.className='import-viewport';viewport.tabIndex=0;viewport.setAttribute('role','group');container.replaceChildren(viewport);
-let index=initialIndex,video=null,disposed=false,frame=null,complete=true,generation=0,board=null,replay=null;
+let index=initialIndex,video=null,disposed=false,frame=null,complete=true,generation=0,board=null,replay=null,ruleLinks=[];
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
-function report(){if(disposed)return;board?.update(complete);replay?.set(complete&&video?.readyState>=2&&!video.seeking);const fraction=video?(complete?1:video.duration?Math.min(1,video.currentTime/video.duration):0):1;onChange(index,fraction,!!video&&!video.paused&&!complete);}
+function report(){if(disposed)return;board?.update(complete);for(const link of ruleLinks)link.hidden=!(complete&&(!video||(video.readyState>=2&&!video.seeking)));replay?.set(complete&&video?.readyState>=2&&!video.seeking);const fraction=video?(complete?1:video.duration?Math.min(1,video.currentTime/video.duration):0):1;onChange(index,fraction,!!video&&!video.paused&&!complete);}
 function fit(){if(frame){const scale=viewport.clientWidth/390;frame.style.transform='scale('+scale+')';viewport.style.height=680*scale+'px';}else viewport.style.height='';}
 function show(value,{skip=false,autoplay=false,historyMode='replace'}={}){
 if(disposed)return;index=Math.max(0,Math.min(scenes.length-1,value));generation++;const current=generation;
-board?.destroy();board=null;replay=null;if(video){video.pause();video.removeAttribute('src');video.load();}video=null;frame=null;viewport.replaceChildren();
+board?.destroy();board=null;replay=null;ruleLinks=[];if(video){video.pause();video.removeAttribute('src');video.load();}video=null;frame=null;viewport.replaceChildren();
 const scene=scenes[index];viewport.dataset.page=String(index+1);viewport.setAttribute('aria-label',article.title+' '+(index+1)+' / '+scenes.length);
+viewport.dataset.sceneId=scene.id;
+if(scene.step)viewport.dataset.step=scene.step;else delete viewport.dataset.step;
+if(scene.description){const description=document.createElement('p');description.className='sr-only';description.id='current-scene-description';description.textContent=scene.description;viewport.append(description);viewport.setAttribute('aria-describedby',description.id);}else viewport.removeAttribute('aria-describedby');
 if(scene.video){complete=false;const media=video=document.createElement('video');media.className='import-video';media.muted=true;media.playsInline=true;media.preload='auto';media.disablePictureInPicture=true;media.src=scene.video;media.setAttribute('aria-label',article.title+' '+(index+1));viewport.append(media);
 const live=()=>!disposed&&current===generation;
 media.addEventListener('loadeddata',()=>{if(!live())return;if(skip||reduced.matches){complete=true;media.currentTime=media.duration;report();}else if(autoplay||scene.advanceChoice)media.play().catch(()=>report());});
@@ -23,12 +26,16 @@ media.addEventListener('ended',()=>{if(live()){complete=true;report();}});
 }else if(scene.image){complete=true;const image=document.createElement('img');image.className='import-scene-image';image.src=scene.image;image.alt=scene.description||scene.title;image.width=390;image.height=680;viewport.append(image);
 }else{complete=true;frame=document.createElement('div');frame.className='import-frame';frame.innerHTML=scene.html;viewport.append(frame);}
 if(article.sceneGroups){const choices=document.createElement('div');choices.className='prep-player-count';choices.setAttribute('role','group');choices.setAttribute('aria-label','플레이 인원');for(const count of [3,4]){const button=document.createElement('button');button.type='button';button.textContent=count+'인용';button.setAttribute('aria-pressed',String(article.players===count));button.addEventListener('click',()=>{if(article.players!==count)onPlayersChange(count);});choices.append(button);}viewport.append(choices);}
+if(scene.board)board=mountFigmaBoard(viewport,video,scene.elementMap);
 const ruleTargets=[];
+if(['689:2715','754:6129','760:10939','760:23200'].includes(scene.id))ruleTargets.push({id:'figma-781:3341',label:'건설 규칙 바로가기',x:24,y:510,w:142,h:28});
+if(['487:11137','549:505'].includes(scene.id))ruleTargets.push({id:'figma-790:3394',label:'도둑 규칙 바로가기',x:213,y:374,w:43,h:30,map:true});
+if(['777:6259','777:12454'].includes(scene.id))ruleTargets.push({id:'figma-790:3394',label:'도둑 규칙 바로가기',x:24,y:147,w:120,h:30});
 if(['781:3347','781:3377'].includes(scene.id))ruleTargets.push({id:'figma-790:3394',label:'도둑 규칙 바로가기',x:24,y:347,w:32,h:28});
-for(const target of ruleTargets){const link=document.createElement('a');link.className='scene-rule-link'+(target.map?' scene-rule-link-map':'');link.href='article.html?id='+encodeURIComponent(target.id)+'&introPage=1';link.setAttribute('aria-label',target.label);link.title=target.label;link.style.cssText='left:'+target.x/390*100+'%;top:'+target.y/680*100+'%;width:'+target.w/390*100+'%;height:'+target.h/680*100+'%';for(const event of ['pointerdown','pointerup','click','keydown'])link.addEventListener(event,e=>e.stopPropagation());viewport.append(link);}
-if(scene.board)board=scene.elementMap?mountFigmaBoard(viewport,video,scene.elementMap):mountPrepBoard(viewport,video);
-if(scene.advanceChoice){const choice=document.createElement('button');choice.type='button';choice.className='progress-start-choice';choice.setAttribute('aria-label','네, 제가 시작 플레이어입니다.');choice.hidden=true;choice.addEventListener('click',e=>{e.stopPropagation();show(index+1,{autoplay:true});viewport.focus({preventScroll:true});});for(const event of ['pointerdown','pointerup'])choice.addEventListener(event,e=>e.stopPropagation());viewport.append(choice);board={update(done){choice.hidden=!(done&&video.readyState>=2&&!video.seeking);},destroy(){choice.remove();}};}
-if(scene.progressPlayers){const link=document.createElement('a');link.className='progress-player-link';link.href='article.html?id='+encodeURIComponent('figma-pages-'+encodeURIComponent('게임 준비'))+'&players=3&introPage=6';link.setAttribute('aria-label','3인용');viewport.append(link);}
+for(const target of ruleTargets){const link=document.createElement('a');link.className='scene-rule-link'+(target.map?' scene-rule-link-map':'');link.href='article.html?id='+encodeURIComponent(target.id)+'&introPage=1';link.setAttribute('aria-label',target.label);link.title=target.label;link.style.cssText='left:'+target.x/390*100+'%;top:'+target.y/680*100+'%;width:'+target.w/390*100+'%;height:'+target.h/680*100+'%';for(const event of ['pointerdown','pointerup','click','keydown'])link.addEventListener(event,e=>e.stopPropagation());viewport.append(link);ruleLinks.push(link);}
+if(scene.resultImage){const spec=scene.resultImage,result=document.createElement('div'),image=document.createElement('img');result.className='progress-result-image';result.hidden=true;result.style.cssText='position:absolute;pointer-events:none;left:'+spec.x/390*100+'%;top:'+spec.y/680*100+'%;width:'+spec.width/390*100+'%;height:'+spec.height/680*100+'%;background:'+spec.background;image.src=spec.src;image.alt=spec.alt;image.style.cssText='display:block;width:100%;height:100%;object-fit:contain;margin:0;border-radius:0';result.append(image);viewport.append(result);board={update(done){result.hidden=!(video.readyState>=2&&!video.seeking&&(done||video.currentTime>=spec.at));},destroy(){result.remove();}};}
+if(scene.advanceChoice){const choices=[['yes','네, 제가 시작 플레이어입니다.'],['no','아니요, 시작 플레이어가 아닙니다.']].map(([value,label])=>{const choice=document.createElement('button');choice.type='button';choice.className='progress-start-choice'+(value==='no'?' progress-start-choice-no':'');choice.setAttribute('aria-label',label);choice.hidden=true;choice.addEventListener('click',e=>{e.stopPropagation();onStartChoice(value);});for(const event of ['pointerdown','pointerup'])choice.addEventListener(event,e=>e.stopPropagation());viewport.append(choice);return choice;});board={update(done){for(const choice of choices)choice.hidden=!(done&&(!video||(video.readyState>=2&&!video.seeking)));},destroy(){choices.forEach(choice=>choice.remove());}};}
+if(scene.progressPlayers&&!article.sceneGroups){const link=document.createElement('a');link.className='progress-player-link';link.href='article.html?id='+encodeURIComponent('figma-pages-'+encodeURIComponent('게임 준비'))+'&players=3&introPage=6';link.setAttribute('aria-label','3인용');viewport.append(link);}
 if(video)replay=window.CatanReplay.mount(viewport,()=>{complete=false;video.currentTime=0;report();video.play().catch(()=>{complete=true;report();});});
 fit();report();const url=new URL(location.href);url.searchParams.set('introPage',index+1);url.searchParams.delete('component');url.searchParams.delete('page');if(historyMode!=='none')history[historyMode==='push'?'pushState':'replaceState']({},'',url);
 }
@@ -41,30 +48,62 @@ const observer=new ResizeObserver(fit);observer.observe(viewport);show(initialIn
 return{stage:viewport,getIndex:()=>index,goTo:i=>{let target=Math.max(0,Math.min(scenes.length-1,i));for(let n=index;n<target;n++)if(scenes[n].advanceChoice){target=n;break;}if(target===index){report();return;}show(target,{skip:true});},destroy(){disposed=true;generation++;board?.destroy();removeSwipe();observer.disconnect();if(video){video.pause();video.removeAttribute('src');video.load();}}};
 }};
 
-// Completed maps use the individual authored Figma layers, not a video crop.
+// Original completed-board variants and slider artwork; no synthetic rotation.
 function mountFigmaBoard(host,video,key){
- const maps=window.CatanFigmaElements.maps;
- const inline=document.createElement('div');inline.className='prep-board-elements';inline.hidden=true;inline.setAttribute('role','img');inline.setAttribute('aria-label','회전 가능한 카탄 배치 지도');
- const control=document.createElement('label');control.className='prep-board-control';control.innerHTML='<input type="range" min="-180" max="180" step="60" value="0" aria-label="지도 회전 각도">';const slider=control.firstElementChild;
- const full=document.createElement('button');full.type='button';full.className='prep-board-fullscreen';full.setAttribute('aria-label','지도 전체화면');full.innerHTML='<span aria-hidden="true">⛶</span>전체화면';
+ const ids={
+  '4-4':['562:10155','562:11086','562:12017','562:12948','562:13879','562:14810'],
+  '3-4':['562:15742','562:16473','562:17204','562:17935','562:18666','562:19397'],
+  '4-3':['562:22255','562:22726','562:23198','562:23670','562:24142','562:24614'],
+  '3-3':['562:25087','562:25558','562:26030','562:26502','562:26974','562:27446']
+ };
+ const renderedBounds={"4-4":{"0":{"x":0,"y":0,"width":390,"height":346},"60":{"x":-18.923583984375,"y":-40,"width":427.846923828125,"height":418.5263671875},"120":{"x":-18.923583984375,"y":-40,"width":427.846923828125,"height":418.5263671875},"180":{"x":0,"y":0,"width":390,"height":346},"240":{"x":-18.92333984375,"y":-65.945068359375,"width":427.846923828125,"height":441.945068359375},"300":{"x":-18.923583984375,"y":-65.945068359375,"width":427.846923828125,"height":441.945068359375}},"3-4":{"0":{"x":0,"y":0,"width":390,"height":346},"60":{"x":-18.9234619140625,"y":-40,"width":427.846923828125,"height":418.5263671875},"120":{"x":-18.9234619140625,"y":-40,"width":427.846923828125,"height":418.5263671875},"180":{"x":0,"y":0,"width":390,"height":346},"240":{"x":-18.9234619140625,"y":-65.945068359375,"width":427.846923828125,"height":441.945068359375},"300":{"x":-18.9234619140625,"y":-65.945068359375,"width":427.846923828125,"height":441.945068359375}},"4-3":{"0":{"x":0,"y":0,"width":390,"height":346},"60":{"x":-18.923583984375,"y":-40,"width":427.846923828125,"height":418.5262451171875},"120":{"x":-18.923583984375,"y":-40,"width":427.846923828125,"height":418.5262451171875},"180":{"x":0,"y":0,"width":390,"height":346},"240":{"x":-18.92333984375,"y":-65.9449462890625,"width":427.846923828125,"height":441.9449462890625},"300":{"x":-18.923583984375,"y":-65.9449462890625,"width":427.846923828125,"height":441.9449462890625}},"3-3":{"0":{"x":0,"y":0,"width":390,"height":346},"60":{"x":-18.9234619140625,"y":-40,"width":427.846923828125,"height":418.5262451171875},"120":{"x":-18.9234619140625,"y":-40,"width":427.846923828125,"height":418.5262451171875},"180":{"x":0,"y":0,"width":390,"height":346},"240":{"x":-18.9234619140625,"y":-65.9449462890625,"width":427.846923828125,"height":441.9449462890625},"300":{"x":-18.9234619140625,"y":-65.9449462890625,"width":427.846923828125,"height":441.9449462890625}}};
+ const angles=[-180,-120,-60,0,60,120,180];
+ const boardMask=angle=>'assets/completed-board-'+key+'-'+((angle+360)%360)+'.png';
+ const boardSource=angle=>'assets/completed-board-'+key+'-'+((angle+360)%360)+'-4x.png';
+ const sliderSource=angle=>'assets/figma-rotation-slider-'+angle+'.svg';
+ const inline=document.createElement('div');inline.className='prep-board-elements';inline.hidden=true;
+ const boardImage=document.createElement('img');boardImage.className='figma-completed-board-image';boardImage.width=390;boardImage.height=346;const inlineMask=document.createElement('div');inlineMask.className='figma-completed-board-mask';inlineMask.append(boardImage);inline.append(inlineMask);
+ const createControl=(label,className)=>{
+  const control=document.createElement('label');control.className='figma-rotation-control '+className;
+  const scale=document.createElement('div');scale.className='figma-rotation-scale';
+  const artwork=document.createElement('img');artwork.className='figma-rotation-art';artwork.alt='';artwork.height=36;artwork.setAttribute('aria-hidden','true');
+  const input=document.createElement('input');input.type='range';input.min='-180';input.max='180';input.step='60';input.value='0';input.disabled=true;input.setAttribute('aria-label',label);
+  scale.append(artwork,input);control.append(scale);return{control,scale,artwork,input};
+ };
+ const normal=createControl('지도 회전 각도','prep-board-control');normal.control.hidden=true;
+ const full=document.createElement('button');full.type='button';full.className='prep-board-fullscreen';full.setAttribute('aria-label','지도 전체화면');full.innerHTML='<span aria-hidden="true">⛶</span>전체화면';full.disabled=true;
  const dialog=document.createElement('dialog');dialog.className='prep-board-dialog';dialog.setAttribute('aria-label','카탄 지도 전체화면');
  const close=document.createElement('button');close.type='button';close.className='prep-board-close';close.setAttribute('aria-label','전체화면 닫기');close.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>';
- const enlarged=document.createElement('div');enlarged.className='prep-board-enlarged';enlarged.setAttribute('role','img');enlarged.setAttribute('aria-label','확대한 카탄 배치 지도');
- const largeSlider=slider.cloneNode();largeSlider.setAttribute('aria-label','전체화면 지도 회전 각도');dialog.append(close,enlarged,largeSlider);document.body.append(dialog);host.append(inline,control,full);
- const layers=[inline,enlarged].map(parent=>{const scale=document.createElement('div');scale.className='figma-map-scale';scale.innerHTML=maps[key];parent.append(scale);const drawing=scale.firstElementChild;drawing.classList.add('figma-map-drawing');drawing.style.width='390px';drawing.style.height='346px';return{parent,scale,drawing,upright:[...drawing.querySelectorAll('[data-name]')].filter(e=>/초보자 숫자 칩|마을 · 흰색 테두리 그룹|도둑 · 사막/.test(e.dataset.name))};});
- let ready=false,angle=0,disposed=false,lastComplete=false;
- const fit=()=>{for(const {parent,scale}of layers)scale.style.transform='scale('+parent.clientWidth/390+')';};
- function rotate(value){angle=Number(value);slider.value=largeSlider.value=String(angle);slider.setAttribute('aria-valuetext',angle+'도');largeSlider.setAttribute('aria-valuetext',angle+'도');control.style.setProperty('--rotation-progress',((angle+180)/360*100)+'%');
-  const rad=angle*Math.PI/180,vertices=[[-171,0],[-85.5,-148.29],[85.5,-148.29],[171,0],[85.5,148.29],[-85.5,148.29]].map(([x,y])=>[x*Math.cos(rad)-y*Math.sin(rad),x*Math.sin(rad)+y*Math.cos(rad)]);const span=n=>Math.max(...vertices.map(p=>p[n]))-Math.min(...vertices.map(p=>p[n]));const factor=Math.min(1,342/span(0),296.58/span(1));
-  for(const {drawing,upright}of layers){drawing.style.transform='scale('+factor+') rotate('+angle+'deg)';for(const node of upright)node.style.rotate=-angle+'deg';}inline.dataset.angle=String(angle);fit();
+ const enlarged=document.createElement('div');enlarged.className='prep-board-enlarged';
+ const enlargedImage=boardImage.cloneNode(),largeMask=inlineMask.cloneNode();largeMask.append(enlargedImage);enlarged.append(largeMask);
+ const large=createControl('전체화면 지도 회전 각도','prep-board-dialog-control');
+ dialog.append(close,enlarged,large.control);document.body.append(dialog);host.append(inline,normal.control,full);
+ let ready=false,imagesReady=false,disposed=false,lastComplete=false,angle=0;
+ const fit=()=>{for(const c of [normal,large])c.scale.style.transform='scale('+c.control.clientWidth/294+')';};
+ function rotate(value){
+  angle=Math.max(-180,Math.min(180,Math.round(Number(value)/60)*60));
+  const direction=(angle+360)%360,bounds=renderedBounds[key][direction];
+  for(const mask of [inlineMask,largeMask])mask.style.maskImage='url("'+(window.CatanBoardMaskData?.[boardMask(angle)]||boardMask(angle))+'")';
+  for(const image of [boardImage,enlargedImage]){image.src=boardSource(angle);image.style.left=bounds.x/390*100+'%';image.style.top=bounds.y/346*100+'%';image.style.width=bounds.width/390*100+'%';image.style.height=bounds.height/346*100+'%';image.alt=key[0]+'인용 게임 준비 '+key[2]+'단계 완료 게임판 · '+angle+'도';image.dataset.nodeId=ids[key][direction/60];}
+  for(const c of [normal,large]){c.input.value=String(angle);c.input.setAttribute('aria-valuetext',angle+'도');c.artwork.src=sliderSource(angle);c.artwork.width=Math.abs(angle)===180?308:302;c.artwork.style.left=(angle===-180?-10:-4)+'px';}
+  inline.dataset.angle=enlarged.dataset.angle=String(angle);fit();
  }
- slider.addEventListener('input',()=>rotate(slider.value));largeSlider.addEventListener('input',()=>rotate(largeSlider.value));close.addEventListener('click',()=>dialog.close());full.addEventListener('click',()=>{if(!ready)return;dialog.showModal();fit();close.focus();});
- for(const el of [control,full])for(const event of ['pointerdown','pointerup','click','keydown'])el.addEventListener(event,e=>e.stopPropagation());
- const observer=new ResizeObserver(fit);observer.observe(inline);observer.observe(enlarged);
- const loaded=Promise.all([...inline.querySelectorAll('img')].map(img=>img.decode().catch(()=>{})));let imagesReady=false;loaded.then(()=>{if(!disposed){imagesReady=true;update(lastComplete);}});
- function update(complete){lastComplete=complete;const available=complete&&video.readyState>=2&&!video.seeking&&imagesReady;slider.disabled=full.disabled=!available;if(available){inline.hidden=false;if(!ready){ready=true;rotate(0);}fit();}else{ready=false;inline.hidden=true;}}
+ for(const c of [normal,large]){c.input.addEventListener('input',()=>rotate(c.input.value));for(const event of ['pointerdown','pointerup','click','keydown'])c.control.addEventListener(event,e=>e.stopPropagation());}
+ close.addEventListener('click',()=>dialog.close());
+ full.addEventListener('click',()=>{if(!ready)return;dialog.showModal();fit();close.focus();});
+ for(const event of ['pointerdown','pointerup','click','keydown'])full.addEventListener(event,e=>e.stopPropagation());
+ const observer=new ResizeObserver(fit);observer.observe(normal.control);observer.observe(large.control);
+ rotate(0);
+ const preload=src=>{const image=new Image();image.src=src;return image.decode();};
+ Promise.all([...new Set(angles.map(boardSource)),...new Set(angles.map(boardMask)),...angles.map(sliderSource)].map(preload)).then(()=>{if(!disposed){imagesReady=true;update(lastComplete);}}).catch(()=>{if(!disposed)host.dataset.boardLoadError='true';});
+ function update(complete){
+  lastComplete=complete;const available=complete&&video.readyState>=2&&!video.seeking&&imagesReady;
+  normal.input.disabled=large.input.disabled=full.disabled=!available;normal.control.hidden=!available;inline.hidden=!available;
+  if(available){if(!ready){ready=true;rotate(0);}fit();}else ready=false;
+ }
  return{update,destroy(){disposed=true;observer.disconnect();if(dialog.open)dialog.close();dialog.remove();}};
 }
+
 
 // Render the pieces on the panel itself: a GIF's opaque, quantized background
 // cannot match either the panel color or the compressed video behind it.
@@ -91,24 +130,4 @@ ${text('97:528',36,528,'<span style="font-weight:500">도둑 말 :</span> 위치
 ${img('97:526',42.5,559,65,65,'assets/game-intro-20261029/f7b9bc9d-0fa0-4838-a3ca-5bef61635447.png')}
 ${text('400:1232',119,582,' x1')}
 </div>`;
-}
-
-// Interactive controls for the two board-layout stages. The video supplies the
-// current authored board, so 3- and 4-player pieces always stay with their map.
-function mountPrepBoard(host,video){
-const canvas=document.createElement('canvas');canvas.className='prep-board-canvas';canvas.width=1026;canvas.height=890;canvas.hidden=true;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','회전 가능한 카탄 배치 지도');
-const control=document.createElement('label');control.className='prep-board-control';control.innerHTML='<span class="sr-only">지도 회전</span><input type="range" min="-180" max="180" step="60" value="0" aria-label="지도 회전 각도">';
-const slider=control.querySelector('input');
-const full=document.createElement('button');full.type='button';full.className='prep-board-fullscreen';full.setAttribute('aria-label','지도 전체화면');full.innerHTML='<span aria-hidden="true">⛶</span>전체화면';
-const dialog=document.createElement('dialog');dialog.className='prep-board-dialog';dialog.setAttribute('aria-label','카탄 지도 전체화면');
-const enlarged=document.createElement('canvas');enlarged.width=1026;enlarged.height=890;enlarged.setAttribute('role','img');enlarged.setAttribute('aria-label','확대된 카탄 배치 지도');
-const close=document.createElement('button');close.type='button';close.className='prep-board-close';close.setAttribute('aria-label','전체화면 닫기');close.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';close.addEventListener('click',()=>dialog.close());
-const largeSlider=slider.cloneNode();largeSlider.setAttribute('aria-label','전체화면 지도 회전 각도');dialog.append(close,enlarged,largeSlider);document.body.append(dialog);host.append(canvas,control,full);
-let ready=false,angle=0;
-function draw(target){const ctx=target.getContext('2d'),w=target.width,h=target.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#faf4e7';if(target===canvas)ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(w/2,h/2);ctx.rotate(angle*Math.PI/180);const r=angle*Math.PI/180,vertices=[[-171,0],[-85.5,-148.29],[85.5,-148.29],[171,0],[85.5,148.29],[-85.5,148.29]].map(([x,y])=>[x*Math.cos(r)-y*Math.sin(r),x*Math.sin(r)+y*Math.cos(r)]);const span=n=>Math.max(...vertices.map(p=>p[n]))-Math.min(...vertices.map(p=>p[n]));const scale=Math.min(1,342/span(0),296.58/span(1));ctx.scale(scale,scale);ctx.beginPath();ctx.moveTo(-w/2,0);ctx.lineTo(-w/4,-h/2);ctx.lineTo(w/4,-h/2);ctx.lineTo(w/2,0);ctx.lineTo(w/4,h/2);ctx.lineTo(-w/4,h/2);ctx.closePath();ctx.clip();const sx=video.videoWidth/390,sy=video.videoHeight/680;ctx.drawImage(video,24*sx,218*sy,342*sx,296.58*sy,-w/2,-h/2,w,h);ctx.restore();}
-function rotate(value){if(!ready)return;angle=Number(value);slider.value=largeSlider.value=String(angle);slider.setAttribute('aria-valuetext',angle+'도');largeSlider.setAttribute('aria-valuetext',angle+'도');control.style.setProperty('--rotation-progress',((angle+180)/360*100)+'%');canvas.hidden=angle===0;canvas.dataset.angle=String(angle);draw(canvas);if(dialog.open)draw(enlarged);}
-slider.addEventListener('input',()=>rotate(slider.value));largeSlider.addEventListener('input',()=>rotate(largeSlider.value));
-full.addEventListener('click',()=>{if(!ready)return;dialog.showModal();draw(enlarged);close.focus();});
-for(const el of [control,full])for(const event of ['pointerdown','pointerup','click','keydown'])el.addEventListener(event,e=>e.stopPropagation());
-return{update(complete){const available=complete&&video.readyState>=2&&!video.seeking;slider.disabled=full.disabled=!available;if(available&&!ready){ready=true;rotate(0);}else if(!available){ready=false;canvas.hidden=true;}},destroy(){if(dialog.open)dialog.close();dialog.remove();}};
 }
