@@ -59,3 +59,6 @@
 .figma-rotation-scale input::-moz-range-thumb{width:20px;height:36px;border:0}
 .figma-rotation-control:focus-within{outline:2px solid var(--accent);outline-offset:4px}
 .prep-board-dialog .figma-rotation-control:focus-within,.prep-board-close:focus-visible{outline:2px solid #fff;outline-offset:4px}
+
+#article-body .progress-start-notice{position:absolute;left:6.153846%;top:70.588235%;width:87.692308%;box-sizing:border-box;padding:12px 14px;border:1px solid #c64c2d;border-radius:8px;background:#faf4e7;color:#c64c2d;text-align:center;font:400 3.589744cqw/1.6 'Catan Guide',sans-serif;pointer-events:none}
+.progress-start-notice[hidden]{display:none}
