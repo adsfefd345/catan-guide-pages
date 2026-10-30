@@ -29,6 +29,7 @@ if(scene.id==='91:303'){const pieces=document.createElement('img');pieces.classN
 if(article.sceneGroups){const choices=document.createElement('div');choices.className='prep-player-count';choices.setAttribute('role','group');choices.setAttribute('aria-label','플레이 인원');for(const count of [3,4]){const button=document.createElement('button');button.type='button';button.textContent=count+'인용';button.setAttribute('aria-pressed',String(article.players===count));button.addEventListener('click',()=>{if(article.players!==count)onPlayersChange(count);});choices.append(button);}viewport.append(choices);}
 if(scene.board)board=mountFigmaBoard(viewport,video,scene.elementMap);
 const ruleTargets=[];
+if(['553:85780','760:6672'].includes(scene.id))ruleTargets.push({id:'figma-790:3394',label:'7이 나왔을 때 도둑 규칙 바로가기',x:24,y:136,w:260,h:52});
 if(['689:2715','754:6129','760:10939','760:23200'].includes(scene.id))ruleTargets.push({id:'figma-781:3341',label:'건설 규칙 바로가기',x:24,y:510,w:142,h:28});
 if(['487:11137','549:505'].includes(scene.id))ruleTargets.push({id:'figma-790:3394',label:'도둑 규칙 바로가기',x:213,y:374,w:43,h:30,map:true});
 if(['777:6259','777:12454'].includes(scene.id))ruleTargets.push({id:'figma-790:3394',label:'도둑 규칙 바로가기',x:24,y:147,w:120,h:30});
