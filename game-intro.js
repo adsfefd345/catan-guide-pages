@@ -25,6 +25,7 @@ for(const event of ['timeupdate','playing','pause','seeked'])media.addEventListe
 media.addEventListener('ended',()=>{if(live()){complete=true;report();}});
 }else if(scene.image){complete=true;const image=document.createElement('img');image.className='import-scene-image';image.src=scene.image;image.alt=scene.description||scene.title;image.width=390;image.height=680;viewport.append(image);
 }else{complete=true;frame=document.createElement('div');frame.className='import-frame';frame.innerHTML=scene.html;viewport.append(frame);}
+if(scene.id==='91:303'){const pieces=document.createElement('img');pieces.className='components-pieces-gif';pieces.src='assets/game-intro-20261029/player-pieces.gif';pieces.alt='도시, 마을, 도로가 빨강, 주황, 파랑, 하양 순서로 바뀝니다.';pieces.draggable=false;viewport.append(pieces);}
 if(article.sceneGroups){const choices=document.createElement('div');choices.className='prep-player-count';choices.setAttribute('role','group');choices.setAttribute('aria-label','플레이 인원');for(const count of [3,4]){const button=document.createElement('button');button.type='button';button.textContent=count+'인용';button.setAttribute('aria-pressed',String(article.players===count));button.addEventListener('click',()=>{if(article.players!==count)onPlayersChange(count);});choices.append(button);}viewport.append(choices);}
 if(scene.board)board=mountFigmaBoard(viewport,video,scene.elementMap);
 const ruleTargets=[];

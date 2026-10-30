@@ -62,3 +62,5 @@
 
 #article-body .progress-start-notice{position:absolute;left:6.153846%;top:70.588235%;width:87.692308%;box-sizing:border-box;padding:12px 14px;border:1px solid #c64c2d;border-radius:8px;background:#faf4e7;color:#c64c2d;text-align:center;font:400 3.589744cqw/1.6 'Catan Guide',sans-serif;pointer-events:none}
 .progress-start-notice[hidden]{display:none}
+
+#article-body .components-pieces-gif{position:absolute;left:6.410256%;top:53.676471%;width:87.179487%;height:14.705882%;max-width:none;margin:0;border-radius:0;object-fit:contain;pointer-events:none}
